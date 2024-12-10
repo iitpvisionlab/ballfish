@@ -1,6 +1,7 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
-from typing import TypedDict
+from typing import TypedDict, TypeAlias, TYPE_CHECKING, cast, Sequence
+
+Value: TypeAlias = float | int | str
 
 if TYPE_CHECKING:
     from random import Random
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
         TypeAlias,
     )
 
-    Distribution: TypeAlias = Callable[[Random], float]
+    Distribution: TypeAlias = Callable[[Random], Value]
 
 
 class UniformParams(TypedDict):
@@ -40,8 +41,17 @@ class RandrangeParams(TypedDict):
     stop: NotRequired[int]
 
 
+class ChoiceParams(TypedDict):
+    name: Literal["choice"]
+    values: NotRequired[list[Value] | list[tuple[Value, float]]]
+
+
 DistributionParams: TypeAlias = (
-    UniformParams | TruncnormParams | ConstantParams | RandrangeParams
+    UniformParams
+    | TruncnormParams
+    | ConstantParams
+    | RandrangeParams
+    | ChoiceParams
 )
 
 
@@ -136,6 +146,23 @@ def create_distribution(
                 return random.randrange(start, stop)
 
             ret = _randrange
+        case "choice":
+            from itertools import accumulate
+
+            values = kwargs.pop("values")
+            assert values, "no value to choose from"
+            population: list[Value]
+            if isinstance(values[0], Sequence):
+                population, weights = zip(*values)
+                cum_weights = list(accumulate(weights))
+            else:
+                population = cast(list[Value], values)
+                cum_weights = None
+
+            def _choice(random: Random):
+                return random.choices(population, cum_weights=cum_weights)[0]
+
+            ret = _choice
         case _:
             raise ValueError(f"Unsupported distribution: {kwargs['name']}")
     if len(kwargs) != 1:

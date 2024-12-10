@@ -101,6 +101,8 @@ class SVG:
     def add_rect(
         self, x: float, y: float, width: float, height: float, style: str
     ):
+        assert height, height
+        assert width, width
         self._lines.append(
             f'<rect x="{x + self._x}" y="{y + self._y}" width="{width}" '
             f'height="{height}" style="{style}" />'
@@ -299,6 +301,16 @@ def gen_distributions(path: Path):
             create_distribution({"name": "randrange", "start": -1, "stop": 2}),
             "randrange_-1_2",
         ),
+        (
+            create_distribution({"name": "choice", "values": [-0.1, 0.1, 1]}),
+            "choice",
+        ),
+        (
+            create_distribution(
+                {"name": "choice", "values": [(-0.1, 30), (0.1, 60), (1, 10)]}
+            ),
+            "choice_with_probability",
+        ),
     )
     for distribution, name in distributions:
         out_path_svg = path / (name + ".svg")
@@ -309,25 +321,30 @@ def gen_distributions(path: Path):
         svg.set_shift(1.5, 2.5)
         samples = [distribution(random) for i in range(100000)]
         hist, bin_edges = np.histogram(samples, bins=60)
-        # len(np.nonzero(hist)[0])
-        # norm = 1.0 / (len(samples)) * len(np.nonzero(hist)[0])
 
-        x = 0
+        width = area = 0.0
         for hist_idx, hist_val in enumerate(hist):
             left, right = bin_edges[hist_idx : hist_idx + 2]
-            x += (right - left) * hist_val
+            bin_length = right - left
+            assert bin_length > 0.0, bin_length
+            if hist_val:
+                width += bin_length
+            area += bin_length * hist_val
 
-        norm = 1.0 / x
+        if width < 0.2:  # for discrete distributions
+            area = np.sum(hist) / (np.count_nonzero(hist))
+
         for hist_idx, hist_val in enumerate(hist):
             left, right = bin_edges[hist_idx : hist_idx + 2]
-            height = hist_val * norm
-            svg.add_rect(
-                width=right - left,
-                height=height,
-                x=left,
-                y=-height,
-                style="fill:#dd0000;stroke:none;",
-            )
+            height = hist_val / area
+            if height:
+                svg.add_rect(
+                    width=right - left,
+                    height=height,
+                    x=left,
+                    y=-height,
+                    style="fill:#dd0000;stroke:none;",
+                )
 
         ls = style(stroke="#000000", stroke_width=0.025, stroke_opacity=0.8)
         svg.add_line(-1.5, 0, 1.5, 0, ls)
