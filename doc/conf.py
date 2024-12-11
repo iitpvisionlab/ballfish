@@ -5,11 +5,21 @@
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+import sys
+from pathlib import Path
+
+root = Path(__file__).parents[1]
+
 
 project = "Ballfish"
 copyright = "2024, iitpvisionlab"
 author = "iitpvisionlab"
-release = "0.1.0"
+release = "unknown"
+with (root / "pyproject.toml").open() as f:
+    for line in f:
+        if line.startswith("version = "):
+            release = line.strip()[11:-1]
+print(f'release: "{release}"')
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -26,7 +36,4 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 html_theme = "alabaster"
 html_static_path = ["_static"]
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parents[1]))
+sys.path.insert(0, str(root))
