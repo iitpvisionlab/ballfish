@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TypedDict, TypeAlias, TYPE_CHECKING, cast, Sequence
 
-Value: TypeAlias = float | int | str
+Value: TypeAlias = float  # | int | str
 
 if TYPE_CHECKING:
     from random import Random
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
         TypeAlias,
     )
 
-    Distribution: TypeAlias = Callable[[Random], Value]
+    Distribution: TypeAlias = Callable[[Random], float]
 
 
 class UniformParams(TypedDict):
@@ -52,6 +52,7 @@ DistributionParams: TypeAlias = (
     | ConstantParams
     | RandrangeParams
     | ChoiceParams
+    | float
 )
 
 
@@ -105,6 +106,8 @@ def create_distribution(
 
     :param name: distribution name in ['uniform', 'truncnorm', 'constant', 'randrange']
     """
+    if isinstance(kwargs, (float, int)):
+        kwargs = {"name": "constant", "value": kwargs}
     match kwargs["name"]:
         case "uniform":
 

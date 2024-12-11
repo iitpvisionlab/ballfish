@@ -22,16 +22,6 @@ if TYPE_CHECKING:
 U8Array: TypeAlias = npt.NDArray[np.uint8]
 
 
-class ConstantDict(dict[str, int | str]):
-    def pop(self, key: str, /):
-        return self[key]
-
-    def __len__(self):
-        return 1
-
-
-ZERO: DistributionParams = ConstantDict({"name": "constant", "value": 0})
-ONE: DistributionParams = ConstantDict({"name": "constant", "value": 1})
 all_transformation_classes: dict[str, Type[Transformation]] = {}
 
 
@@ -235,10 +225,10 @@ class PaddingsAddition(GeometricTransform):
 
     def __init__(
         self,
-        top: DistributionParams = ZERO,
-        right: DistributionParams = ZERO,
-        bottom: DistributionParams = ZERO,
-        left: DistributionParams = ZERO,
+        top: DistributionParams = 0.0,
+        right: DistributionParams = 0.0,
+        bottom: DistributionParams = 0.0,
+        left: DistributionParams = 0.0,
     ):
         self._top = create_distribution(top)
         self._right = create_distribution(right)
@@ -281,10 +271,10 @@ class ProjectivePaddingsAddition(PaddingsAddition):
 
     def __init__(
         self,
-        top: DistributionParams = ZERO,
-        right: DistributionParams = ZERO,
-        bottom: DistributionParams = ZERO,
-        left: DistributionParams = ZERO,
+        top: DistributionParams = 0.0,
+        right: DistributionParams = 0.0,
+        bottom: DistributionParams = 0.0,
+        left: DistributionParams = 0.0,
     ):
         self._top = create_distribution(top)
         self._right = create_distribution(right)
@@ -378,8 +368,8 @@ class ProjectiveShift(GeometricTransform):
 
     def __init__(
         self,
-        x: DistributionParams = ZERO,
-        y: DistributionParams = ZERO,
+        x: DistributionParams = 0.0,
+        y: DistributionParams = 0.0,
     ):
         """
         :param x: `create_distribution` arguments, dict
@@ -497,7 +487,7 @@ class Noising(Transformation):
         std: DistributionParams
 
     def __init__(
-        self, std: DistributionParams, mean: DistributionParams = ZERO
+        self, std: DistributionParams, mean: DistributionParams = 0.0
     ):
         self._mean = create_distribution(mean)
         self._std = create_distribution(std)
