@@ -630,6 +630,40 @@ class Sharpness(Transformation):
         return a + (b - a) * factor
 
 
+class Shading(Transformation):
+    """
+    Makes a random band darker.
+
+    .. image:: _static/transformations/shading.svg
+    """
+
+    name = "shading"
+
+    class Args(ArgDict):
+        name: Literal["shading"]
+        value: DistributionParams
+
+    def __init__(self, value: DistributionParams):
+        self._value = create_distribution(value)
+
+    def get_mask(self, width: int, height: int, random: Random):
+        y, x = np.ogrid[0:height, 0:width]
+        x1, y1 = random.randint(0, width - 1), random.randint(0, height - 1)
+        x2, y2 = random.randint(0, width - 1), random.randint(0, height - 1)
+        return x * (y2 - y1) - y * (x2 - x1) > x1 * y2 - x2 * y1
+
+    def __call__(self, datum: Datum, random: Random) -> Datum:
+        assert datum.image is not None, "No image to apply Shading to"
+        height, width = datum.image.shape[-2:]
+        for batch in datum.image:
+            mask = self.get_mask(width, height, random)
+            masked_pixels_count = np.count_nonzero(mask)
+            if masked_pixels_count == 0:
+                continue
+            batch[:, mask] += self._value(random) * batch.max()
+        return datum
+
+
 Args: TypeAlias = (
     Projective1ptTransformation.Args
     | Projective4ptTransformation.Args
@@ -647,6 +681,7 @@ Args: TypeAlias = (
     | Addition.Args
     | Noising.Args
     | Clip.Args
+    | Shading.Args
 )
 
 

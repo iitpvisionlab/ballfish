@@ -485,6 +485,17 @@ def gen_image_transforms(path: Path) -> None:
                 ]
             ),
         ),
+        (
+            "shading",
+            create_augmentation(
+                [
+                    {
+                        "name": "shading",
+                        "value": {"name": "truncnorm", "a": -0.5, "b": 0.5},
+                    },
+                ]
+            ),
+        ),
     )
     from PIL import Image
     from torchvision.transforms import Resize
