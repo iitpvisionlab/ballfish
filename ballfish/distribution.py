@@ -1,6 +1,7 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
-from typing import TypedDict
+from typing import TypedDict, TypeAlias, TYPE_CHECKING, cast, Sequence
+
+Value: TypeAlias = float  # | int | str
 
 if TYPE_CHECKING:
     from random import Random
@@ -40,8 +41,18 @@ class RandrangeParams(TypedDict):
     stop: NotRequired[int]
 
 
+class ChoiceParams(TypedDict):
+    name: Literal["choice"]
+    values: NotRequired[list[Value] | list[tuple[Value, float]]]
+
+
 DistributionParams: TypeAlias = (
-    UniformParams | TruncnormParams | ConstantParams | RandrangeParams
+    UniformParams
+    | TruncnormParams
+    | ConstantParams
+    | RandrangeParams
+    | ChoiceParams
+    | float
 )
 
 
@@ -64,17 +75,17 @@ def create_distribution(
          - a=0.75, b=0.75
          - .. image:: _static/transformations/uniform_075_075.svg
               :width: 75%
-       * - gauss
+       * - truncnorm
          - mu=0.0, sigma=0.75, delta=1.0
-         - .. image:: _static/transformations/gauss_000_075_100.svg
+         - .. image:: _static/transformations/truncnorm_000_075_100.svg
               :width: 75%
-       * - gauss
+       * - truncnorm
          - mu=0.4, sigma=0.3, delta=1.0
-         - .. image:: _static/transformations/gauss_040_030_100.svg
+         - .. image:: _static/transformations/truncnorm_040_030_100.svg
               :width: 75%
-       * - gauss
+       * - truncnorm
          - mu=0.0, sigma=0.5, a=0.0, b=1.0
-         - .. image:: _static/transformations/gauss_000_050_000_100.svg
+         - .. image:: _static/transformations/truncnorm_000_050_000_100.svg
               :width: 75%
        * - constant
          - value=0.25
@@ -84,9 +95,19 @@ def create_distribution(
          - start=-1, stop=2
          - .. image:: _static/transformations/randrange_-1_2.svg
               :width: 75%
+       * - choice
+         - values = [-0.1, 0.1, 1]
+         - .. image:: _static/transformations/choice.svg
+              :width: 75%
+       * - choice
+         - values = [(-0.1, 30), (0.1, 60), (1, 10)]
+         - .. image:: _static/transformations/choice_with_probability.svg
+              :width: 75%
 
-    :param name: distribution name in ['uniform', 'gauss', 'constant', 'randrange']
+    :param name: distribution name in ['uniform', 'truncnorm', 'constant', 'randrange']
     """
+    if isinstance(kwargs, (float, int)):
+        kwargs = {"name": "constant", "value": kwargs}
     match kwargs["name"]:
         case "uniform":
 
@@ -136,6 +157,23 @@ def create_distribution(
                 return random.randrange(start, stop)
 
             ret = _randrange
+        case "choice":
+            from itertools import accumulate
+
+            values = kwargs.pop("values")
+            assert values, "no value to choose from"
+            population: list[Value]
+            if isinstance(values[0], Sequence):
+                population, weights = zip(*values)
+                cum_weights = list(accumulate(weights))
+            else:
+                population = cast(list[Value], values)
+                cum_weights = None
+
+            def _choice(random: Random):
+                return random.choices(population, cum_weights=cum_weights)[0]
+
+            ret = _choice
         case _:
             raise ValueError(f"Unsupported distribution: {kwargs['name']}")
     if len(kwargs) != 1:

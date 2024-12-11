@@ -22,33 +22,29 @@ if TYPE_CHECKING:
 U8Array: TypeAlias = npt.NDArray[np.uint8]
 
 
-class ConstantDict(dict[str, int | str]):
-    def pop(self, key: str, /):
-        return self[key]
-
-    def __len__(self):
-        return 1
-
-
-ZERO: DistributionParams = ConstantDict({"name": "constant", "value": 0})
-ONE: DistributionParams = ConstantDict({"name": "constant", "value": 1})
 all_transformation_classes: dict[str, Type[Transformation]] = {}
 
 
 class Datum:
-    image: Tensor | None
     quads: list[Quad]
 
-    def __init__(self, image: Tensor, quad: Quad, width: int, height: int):
+    def __init__(
+        self,
+        source: Tensor | None,
+        quad: Quad,
+        width: int,
+        height: int,
+        image: Tensor | None = None,
+    ):
         """
-        Image shape (N, C, H, W)
+        source shape (N, C, H, W)
         """
-        assert image.ndim == 4, image.ndim
-        self.source = image
-        self.quads = [quad] * image.shape[0]
+        assert source is None or source.ndim == 4, source.ndim
+        self.source = source
+        self.quads = [quad] * source.shape[0]
         self.width = width
         self.height = height
-        self.image = None
+        self.image = image
 
     @classmethod
     def from_tensor(cls, image: Tensor) -> Datum:
@@ -229,10 +225,10 @@ class PaddingsAddition(GeometricTransform):
 
     def __init__(
         self,
-        top: DistributionParams = ZERO,
-        right: DistributionParams = ZERO,
-        bottom: DistributionParams = ZERO,
-        left: DistributionParams = ZERO,
+        top: DistributionParams = 0.0,
+        right: DistributionParams = 0.0,
+        bottom: DistributionParams = 0.0,
+        left: DistributionParams = 0.0,
     ):
         self._top = create_distribution(top)
         self._right = create_distribution(right)
@@ -275,10 +271,10 @@ class ProjectivePaddingsAddition(PaddingsAddition):
 
     def __init__(
         self,
-        top: DistributionParams = ZERO,
-        right: DistributionParams = ZERO,
-        bottom: DistributionParams = ZERO,
-        left: DistributionParams = ZERO,
+        top: DistributionParams = 0.0,
+        right: DistributionParams = 0.0,
+        bottom: DistributionParams = 0.0,
+        left: DistributionParams = 0.0,
     ):
         self._top = create_distribution(top)
         self._right = create_distribution(right)
@@ -372,8 +368,8 @@ class ProjectiveShift(GeometricTransform):
 
     def __init__(
         self,
-        x: DistributionParams = ZERO,
-        y: DistributionParams = ZERO,
+        x: DistributionParams = 0.0,
+        y: DistributionParams = 0.0,
     ):
         """
         :param x: `create_distribution` arguments, dict
@@ -491,7 +487,7 @@ class Noising(Transformation):
         std: DistributionParams
 
     def __init__(
-        self, std: DistributionParams, mean: DistributionParams = ZERO
+        self, std: DistributionParams, mean: DistributionParams = 0.0
     ):
         self._mean = create_distribution(mean)
         self._std = create_distribution(std)
@@ -622,29 +618,6 @@ class Sharpness(Transformation):
 
         factor = self._factor(random)
         datum.image = adjust_sharpness(datum.image, factor)
-        # src = datum.image
-        # kernel = (
-        #     torch.as_tensor(self.kernel, dtype=src.dtype, device=src.device)
-        #     .view(1, 1, 3, 3)
-        #     .repeat(src.size(1), 1, 1, 1)
-        #     / 13
-        # )
-
-        # degenerate = torch.nn.functional.conv2d(
-        #     src, kernel, bias=None, stride=1, groups=src.size(1)
-        # )
-        # degenerate = torch.clamp(degenerate, 0.0, 1.0)
-
-        # # For the borders of the resulting image, fill in the values of the original image.
-        # mask = torch.ones_like(degenerate)
-        # padded_mask = torch.nn.functional.pad(mask, [1, 1, 1, 1])
-        # padded_degenerate = torch.nn.functional.pad(degenerate, [1, 1, 1, 1])
-        # result = torch.where(padded_mask == 1, padded_degenerate, src)
-
-        # datum.image = self._blend(result, src, factor)
-        # if len(factor.size()) == 0:
-        # return _blend_one(result, src, factor)
-        # return torch.stack([_blend_one(result[i], src[i], factor[i]) for i in range(len(factor))])
 
         return datum
 
@@ -655,6 +628,40 @@ class Sharpness(Transformation):
         if factor == 1.0:
             return b
         return a + (b - a) * factor
+
+
+class Shading(Transformation):
+    """
+    Makes a random band darker.
+
+    .. image:: _static/transformations/shading.svg
+    """
+
+    name = "shading"
+
+    class Args(ArgDict):
+        name: Literal["shading"]
+        value: DistributionParams
+
+    def __init__(self, value: DistributionParams):
+        self._value = create_distribution(value)
+
+    def get_mask(self, width: int, height: int, random: Random):
+        y, x = np.ogrid[0:height, 0:width]
+        x1, y1 = random.randint(0, width - 1), random.randint(0, height - 1)
+        x2, y2 = random.randint(0, width - 1), random.randint(0, height - 1)
+        return x * (y2 - y1) - y * (x2 - x1) > x1 * y2 - x2 * y1
+
+    def __call__(self, datum: Datum, random: Random) -> Datum:
+        assert datum.image is not None, "No image to apply Shading to"
+        height, width = datum.image.shape[-2:]
+        for batch in datum.image:
+            mask = self.get_mask(width, height, random)
+            masked_pixels_count = np.count_nonzero(mask)
+            if masked_pixels_count == 0:
+                continue
+            batch[:, mask] += self._value(random) * batch.max()
+        return datum
 
 
 Args: TypeAlias = (
@@ -674,6 +681,7 @@ Args: TypeAlias = (
     | Addition.Args
     | Noising.Args
     | Clip.Args
+    | Shading.Args
 )
 
 

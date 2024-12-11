@@ -1,6 +1,6 @@
 [project]
 name = "ballfish"
-version = "0.1.0"
+version = "0.2.0"
 authors = [
   { name="Arseniy Terekhin", email="senyai@gmail.com" },
 ]
@@ -14,6 +14,10 @@ classifiers = [
 dependencies = [
   "torch",
 ]
+[project.urls]
+"Homepage" = "https://github.com/iitpvisionlab/ballfish"
+"Bug Reports" = "https://github.com/iitpvisionlab/ballfish/issues"
+"Source" = "https://github.com/iitpvisionlab/ballfish"
 [build-system]
 requires = [
   "setuptools",
