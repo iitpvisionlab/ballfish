@@ -74,17 +74,17 @@ def create_distribution(
          - a=0.75, b=0.75
          - .. image:: _static/transformations/uniform_075_075.svg
               :width: 75%
-       * - gauss
+       * - truncnorm
          - mu=0.0, sigma=0.75, delta=1.0
-         - .. image:: _static/transformations/gauss_000_075_100.svg
+         - .. image:: _static/transformations/truncnorm_000_075_100.svg
               :width: 75%
-       * - gauss
+       * - truncnorm
          - mu=0.4, sigma=0.3, delta=1.0
-         - .. image:: _static/transformations/gauss_040_030_100.svg
+         - .. image:: _static/transformations/truncnorm_040_030_100.svg
               :width: 75%
-       * - gauss
+       * - truncnorm
          - mu=0.0, sigma=0.5, a=0.0, b=1.0
-         - .. image:: _static/transformations/gauss_000_050_000_100.svg
+         - .. image:: _static/transformations/truncnorm_000_050_000_100.svg
               :width: 75%
        * - constant
          - value=0.25
@@ -94,8 +94,16 @@ def create_distribution(
          - start=-1, stop=2
          - .. image:: _static/transformations/randrange_-1_2.svg
               :width: 75%
+       * - choice
+         - values = [-0.1, 0.1, 1]
+         - .. image:: _static/transformations/choice.svg
+              :width: 75%
+       * - choice
+         - values = [(-0.1, 30), (0.1, 60), (1, 10)]
+         - .. image:: _static/transformations/choice_with_probability.svg
+              :width: 75%
 
-    :param name: distribution name in ['uniform', 'gauss', 'constant', 'randrange']
+    :param name: distribution name in ['uniform', 'truncnorm', 'constant', 'randrange']
     """
     match kwargs["name"]:
         case "uniform":

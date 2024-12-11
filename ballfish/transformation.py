@@ -36,19 +36,25 @@ all_transformation_classes: dict[str, Type[Transformation]] = {}
 
 
 class Datum:
-    image: Tensor | None
     quads: list[Quad]
 
-    def __init__(self, image: Tensor, quad: Quad, width: int, height: int):
+    def __init__(
+        self,
+        source: Tensor | None,
+        quad: Quad,
+        width: int,
+        height: int,
+        image: Tensor | None = None,
+    ):
         """
-        Image shape (N, C, H, W)
+        source shape (N, C, H, W)
         """
-        assert image.ndim == 4, image.ndim
-        self.source = image
-        self.quads = [quad] * image.shape[0]
+        assert source is None or source.ndim == 4, source.ndim
+        self.source = source
+        self.quads = [quad] * source.shape[0]
         self.width = width
         self.height = height
-        self.image = None
+        self.image = image
 
     @classmethod
     def from_tensor(cls, image: Tensor) -> Datum:

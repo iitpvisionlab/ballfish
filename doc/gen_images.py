@@ -14,14 +14,20 @@ from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
 
 def dummy_datum(
-    image: Tensor | None = None,
+    source: Tensor | None = None,
     quad: Quad | None = None,
     width: int = 16,
     height: int = 16,
+    image: Tensor | None = None,
 ) -> Datum:
-    if image is None:
-        image = torch.zeros((1, 1, 1, 1))
-    return Datum(image=image, quad=quad, width=width, height=height)
+    if source is None:
+        source = torch.zeros((1, 1, 1, 1))
+    if quad is None:
+        h, w = map(float, source.shape[-2:])
+        quad = ((0.0, 0.0), (w, 0.0), (w, h), (0.0, h))
+    return Datum(
+        source=source, quad=quad, width=width, height=height, image=image
+    )
 
 
 def style(
@@ -431,6 +437,54 @@ def gen_image_transforms(path: Path) -> None:
                 ]
             ),
         ),
+        (
+            "flip_horizontal",
+            create_augmentation(
+                [
+                    {
+                        "name": "flip",
+                        "direction": "horizontal",
+                    },
+                    {"name": "rasterize"},
+                ]
+            ),
+        ),
+        (
+            "flip_primary_diagonal",
+            create_augmentation(
+                [
+                    {
+                        "name": "flip",
+                        "direction": "primary_diagonal",
+                    },
+                    {"name": "rasterize"},
+                ]
+            ),
+        ),
+        (
+            "flip_secondary_diagonal",
+            create_augmentation(
+                [
+                    {
+                        "name": "flip",
+                        "direction": "secondary_diagonal",
+                    },
+                    {"name": "rasterize"},
+                ]
+            ),
+        ),
+        (
+            "flip_vertical",
+            create_augmentation(
+                [
+                    {
+                        "name": "flip",
+                        "direction": "vertical",
+                    },
+                    {"name": "rasterize"},
+                ]
+            ),
+        ),
     )
     from PIL import Image
     from torchvision.transforms import Resize
@@ -448,7 +502,7 @@ def gen_image_transforms(path: Path) -> None:
             continue
         random = Random(13)
         svg = SVG(210, 16 * 2 + 4 + 2)
-        n = 1 if name.startswith("log_") else 10
+        n = 1 if name.startswith(("log_", "flip_")) else 10
         for img_idx, img in enumerate((img_gray, img_rgb)):
             svg.set_shift(1.0, 1.0 + img_idx * 20)
             svg.add_image(0, 0, img, scale=4)
@@ -459,8 +513,12 @@ def gen_image_transforms(path: Path) -> None:
                 style="font-size:8px;fill:#dd0000;fill-opacity:1.0",
             )
             for i in range(n):
-                datum = dummy_datum()
-                datum.image = torch.clone(img)
+                if name.startswith("flip_"):
+                    datum = dummy_datum(
+                        source=torch.clone(img), width=64, height=64
+                    )
+                else:
+                    datum = dummy_datum(image=torch.clone(img))
                 try:
                     out = augmentation(datum, random)
                 except Exception as e:
