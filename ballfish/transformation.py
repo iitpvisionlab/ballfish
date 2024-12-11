@@ -628,29 +628,6 @@ class Sharpness(Transformation):
 
         factor = self._factor(random)
         datum.image = adjust_sharpness(datum.image, factor)
-        # src = datum.image
-        # kernel = (
-        #     torch.as_tensor(self.kernel, dtype=src.dtype, device=src.device)
-        #     .view(1, 1, 3, 3)
-        #     .repeat(src.size(1), 1, 1, 1)
-        #     / 13
-        # )
-
-        # degenerate = torch.nn.functional.conv2d(
-        #     src, kernel, bias=None, stride=1, groups=src.size(1)
-        # )
-        # degenerate = torch.clamp(degenerate, 0.0, 1.0)
-
-        # # For the borders of the resulting image, fill in the values of the original image.
-        # mask = torch.ones_like(degenerate)
-        # padded_mask = torch.nn.functional.pad(mask, [1, 1, 1, 1])
-        # padded_degenerate = torch.nn.functional.pad(degenerate, [1, 1, 1, 1])
-        # result = torch.where(padded_mask == 1, padded_degenerate, src)
-
-        # datum.image = self._blend(result, src, factor)
-        # if len(factor.size()) == 0:
-        # return _blend_one(result, src, factor)
-        # return torch.stack([_blend_one(result[i], src[i], factor[i]) for i in range(len(factor))])
 
         return datum
 
