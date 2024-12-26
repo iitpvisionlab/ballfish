@@ -37,3 +37,9 @@ html_theme = "alabaster"
 html_static_path = ["_static"]
 
 sys.path.insert(0, str(root))
+
+from doc.gen_images import generate_images
+
+print("generating images")
+generate_images()
+print("done")
