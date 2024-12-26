@@ -1,6 +1,6 @@
 [project]
 name = "ballfish"
-version = "0.2.1"
+version = "0.2.2"
 authors = [
   { name="Arseniy Terekhin", email="senyai@gmail.com" },
 ]
@@ -19,6 +19,7 @@ dependencies = [
 ]
 [project.urls]
 "Homepage" = "https://github.com/iitpvisionlab/ballfish"
+"Documentation" = "https://ballfish.readthedocs.io/"
 "Bug Reports" = "https://github.com/iitpvisionlab/ballfish/issues"
 "Source" = "https://github.com/iitpvisionlab/ballfish"
 [build-system]
