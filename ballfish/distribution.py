@@ -67,7 +67,7 @@ def create_distribution(
          - .. image:: _static/transformations/uniform_000_050.svg
               :width: 75%
        * - uniform
-         - a=0.75, b=0.75
+         - a=-0.75, b=0.75
          - .. image:: _static/transformations/uniform_075_075.svg
               :width: 75%
        * - truncnorm
