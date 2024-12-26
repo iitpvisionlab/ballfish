@@ -595,6 +595,32 @@ class Clip(Transformation):
         return datum
 
 
+class Grayscale(Transformation):
+    """
+    Average of all channels.
+    Set `num_output_channels` to make number ou output channels not one.
+
+    .. image:: _static/transformations/grayscale.svg
+    """
+
+    name = "grayscale"
+
+    class Args(ArgDict):
+        name: Literal["clip"]
+        num_output_channels: NotRequired[int]
+
+    def __init__(self, num_output_channels: int = 1):
+        self._channels = num_output_channels
+
+    def __call__(self, datum: Datum, random: Random):
+        assert datum.image is not None, "missing datum.image"
+
+        from torchvision.transforms.v2.functional import rgb_to_grayscale
+
+        datum.image = rgb_to_grayscale(datum.image, self._channels)
+        return datum
+
+
 class Sharpness(Transformation):
     name = "sharpness"
 
@@ -682,6 +708,7 @@ Args: TypeAlias = (
     | Noising.Args
     | Clip.Args
     | Shading.Args
+    | Grayscale.Args
 )
 
 
