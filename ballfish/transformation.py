@@ -86,6 +86,8 @@ class ArgDict(TypedDict):
 class Projective1ptTransformation(GeometricTransform):
     """
     Shifts one point of the quadrangle in random direction.
+
+    .. image:: _static/transformations/projective1pt.svg
     """
 
     name = "projective1pt"
@@ -123,6 +125,8 @@ class Projective1ptTransformation(GeometricTransform):
 class Projective4ptTransformation(GeometricTransform):
     """
     Shifts four point of the quadrangle in random direction.
+
+    .. image:: _static/transformations/projective4pt.svg
     """
 
     name = "projective4pt"
@@ -507,6 +511,10 @@ class Noising(Transformation):
 
 
 class Addition(Transformation):
+    """
+    Add the `value` to `Datum.image`
+    """
+
     name = "addition"
 
     class Args(ArgDict):
@@ -523,6 +531,10 @@ class Addition(Transformation):
 
 
 class Multiplication(Transformation):
+    """
+    Multiply `Datum.image` by the `value`
+    """
+
     name = "multiplication"
 
     class Args(ArgDict):
@@ -539,6 +551,10 @@ class Multiplication(Transformation):
 
 
 class Pow(Transformation):
+    """
+    Raise `Datum.image` to the power of `pow`
+    """
+
     name = "pow"
 
     class Args(ArgDict):
@@ -578,12 +594,16 @@ class Log(Transformation):
 
 
 class Clip(Transformation):
+    """
+    Clip `Datum.image` value to `min` and `max`
+    """
+
     name = "clip"
 
     class Args(ArgDict):
         name: Literal["clip"]
-        min: float
-        max: float
+        min: NotRequired[float]
+        max: NotRequired[float]
 
     def __init__(self, min: float, max: float):
         self._min, self._max = min, max
