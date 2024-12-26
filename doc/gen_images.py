@@ -3,7 +3,6 @@ from __future__ import annotations
 import io
 from pathlib import Path
 from random import Random
-import numpy as np
 import base64
 import torch
 from torch import Tensor
@@ -325,8 +324,10 @@ def gen_distributions(path: Path):
         random = Random(13)
         svg = SVG(3.0, 3.0)
         svg.set_shift(1.5, 2.5)
-        samples = [distribution(random) for i in range(100000)]
-        hist, bin_edges = np.histogram(samples, bins=60)
+        samples = torch.tensor(
+            [distribution(random) for i in range(100000)], dtype=torch.float64
+        )
+        hist, bin_edges = torch.histogram(samples, bins=60)
 
         width = area = 0.0
         for hist_idx, hist_val in enumerate(hist):
@@ -338,7 +339,7 @@ def gen_distributions(path: Path):
             area += bin_length * hist_val
 
         if width < 0.2:  # for discrete distributions
-            area = np.sum(hist) / (np.count_nonzero(hist))
+            area = torch.sum(hist) / (torch.count_nonzero(hist))
 
         for hist_idx, hist_val in enumerate(hist):
             left, right = bin_edges[hist_idx : hist_idx + 2]
