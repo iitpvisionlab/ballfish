@@ -640,7 +640,7 @@ class Sharpness(Transformation):
     def __call__(self, datum: Datum, random: Random):
         assert datum.image is not None, "missing datum.image"
 
-        from torchvision.transforms.functional import adjust_sharpness
+        from torchvision.transforms.v2.functional import adjust_sharpness
 
         factor = self._factor(random)
         datum.image = adjust_sharpness(datum.image, factor)
