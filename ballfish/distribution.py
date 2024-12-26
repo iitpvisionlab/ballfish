@@ -1,16 +1,11 @@
 from __future__ import annotations
-from typing import TypedDict, TypeAlias, TYPE_CHECKING, cast, Sequence
+from typing import TypedDict, TypeAlias, TYPE_CHECKING, cast, Sequence, Literal
 
 Value: TypeAlias = float  # | int | str
 
 if TYPE_CHECKING:
     from random import Random
-    from typing import (
-        Callable,
-        Literal,
-        NotRequired,
-        TypeAlias,
-    )
+    from typing import Callable, NotRequired
 
     Distribution: TypeAlias = Callable[[Random], float]
 
