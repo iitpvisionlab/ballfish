@@ -13,7 +13,9 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
+  "torchvision",  # grayscale, sharpness
   "torch",
+  "scipy",  # truncnorm
 ]
 [project.urls]
 "Homepage" = "https://github.com/iitpvisionlab/ballfish"

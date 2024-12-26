@@ -1,2 +1,4 @@
 torchvision==0.20.1
 torch==2.5.1
+scipy==1.11.3
+sphinx==7.2.6
