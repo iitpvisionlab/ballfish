@@ -7,7 +7,9 @@ Welcome to Ballfish's documentation!
 
 .. automodule:: ballfish
     :members:
-    :no-undoc-members:
+    :exclude-members: create_augmentation
+
+    .. autofunction:: create_augmentation(operations: Sequence[Args]) -> Callable[[Datum, Random], Datum]
 
 .. automodule:: ballfish.distribution
     :members:
