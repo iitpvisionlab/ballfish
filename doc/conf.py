@@ -14,12 +14,6 @@ root = Path(__file__).parents[1]
 project = "Ballfish"
 copyright = "2024, iitpvisionlab"
 author = "iitpvisionlab"
-release = "unknown"
-with (root / "pyproject.toml").open() as f:
-    for line in f:
-        if line.startswith("version = "):
-            release = line.strip()[11:-1]
-print(f'release: "{release}"')
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -37,6 +31,10 @@ html_theme = "alabaster"
 html_static_path = ["_static"]
 
 sys.path.insert(0, str(root))
+
+from ballfish import __version__ as ballfish_version
+
+release = ballfish_version
 
 from doc.gen_images import generate_images
 
