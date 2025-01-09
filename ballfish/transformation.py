@@ -26,6 +26,10 @@ all_transformation_classes: dict[str, Type[Transformation]] = {}
 
 
 class Datum:
+    """
+    Input and output class for augmentation
+    """
+
     quads: list[Quad]
 
     def __init__(
@@ -36,14 +40,20 @@ class Datum:
         height: int,
         image: Tensor | None = None,
     ):
-        """
-        source shape (N, C, H, W)
-        """
         assert source is None or source.ndim == 4, source.ndim
+        #: Main input that :class:`Rasterize` takes as input.
+        #: Expected to be in (N, C, H, W) format.  This input unfortunately
+        #: must be in `torch.float{32,64}` formats because torch's
+        #: `torch.nn.functional.grid_sample` doesn't work with other types.
         self.source = source
+        #: rois
         self.quads = [quad] * source.shape[0]
+        #: Width for :class:`Rasterize` and for calculating
+        #: projective transformations
         self.width = width
+        #: Height
         self.height = height
+        #: the output image, must be `None` when :class:`Rasterize` is used
         self.image = image
 
     @classmethod
@@ -88,6 +98,14 @@ class Projective1ptTransformation(GeometricTransform):
     Shifts one point of the quadrangle in random direction.
 
     .. image:: _static/transformations/projective1pt.svg
+
+    .. code-block:: JSON
+
+       {
+           "name": "projective1pt",
+           "x": {"name": "truncnorm", "a": -0.25, "b": 0.25},
+           "y": {"name": "uniform", "a": -0.25, "b": 0.25}
+       }
     """
 
     name = "projective1pt"
@@ -127,6 +145,14 @@ class Projective4ptTransformation(GeometricTransform):
     Shifts four point of the quadrangle in random direction.
 
     .. image:: _static/transformations/projective4pt.svg
+
+    .. code-block:: JSON
+
+       {
+           "name": "projective4pt",
+           "x": {"name": "truncnorm", "a": -0.25, "b": 0.25},
+           "y": {"name": "uniform", "a": -0.25, "b": 0.25}
+       }
     """
 
     name = "projective4pt"
@@ -189,22 +215,46 @@ class Flip(GeometricTransform):
 
     @staticmethod
     def horizontal(q: Quad) -> Quad:
-        """.. image:: _static/transformations/flip_horizontal.svg"""
+        """
+        .. image:: _static/transformations/flip_horizontal.svg
+
+        .. code-block:: JSON
+
+            {"name": "flip", "direction": "horizontal"}
+        """
         return (q[1], q[0], q[3], q[2])
 
     @staticmethod
     def vertical(q: Quad) -> Quad:
-        """.. image:: _static/transformations/flip_vertical.svg"""
+        """
+        .. image:: _static/transformations/flip_vertical.svg
+
+        .. code-block:: JSON
+
+           {"name": "flip", "direction": "vertical"}
+        """
         return (q[2], q[3], q[0], q[1])
 
     @staticmethod
     def primary_diagonal(q: Quad) -> Quad:
-        """.. image:: _static/transformations/flip_primary_diagonal.svg"""
+        """
+        .. image:: _static/transformations/flip_primary_diagonal.svg
+
+        .. code-block:: JSON
+
+           {"name": "flip", "direction": "primary_diagonal"}
+        """
         return (q[0], q[3], q[2], q[1])
 
     @staticmethod
     def secondary_diagonal(q: Quad) -> Quad:
-        """.. image:: _static/transformations/flip_secondary_diagonal.svg"""
+        """
+        .. image:: _static/transformations/flip_secondary_diagonal.svg
+
+        .. code-block:: JSON
+
+           {"name": "flip", "direction": "secondary_diagonal"}
+        """
         return (q[2], q[1], q[0], q[3])
 
     def new_quad(self, quad: Quad, datum: Datum, random: Random) -> Quad:
@@ -216,6 +266,16 @@ class PaddingsAddition(GeometricTransform):
     Adds random padding to the quadrangle sides.
 
     .. image:: _static/transformations/paddings_addition.svg
+
+    .. code-block:: JSON
+
+       {
+           "name": "paddings_addition",
+           "top": {"name": "uniform", "a": 0, "b": 0.25},
+           "right": {"name": "uniform", "a": 0, "b": 0.25},
+           "bottom": {"name": "uniform", "a": 0, "b": 0.25},
+           "left": {"name": "uniform", "a": 0, "b": 0.25}
+       }
     """
 
     name = "paddings_addition"
@@ -262,6 +322,16 @@ class ProjectivePaddingsAddition(PaddingsAddition):
     transformation.
 
     .. image:: _static/transformations/projective_paddings_addition.svg
+
+    .. code-block:: JSON
+
+       {
+           "name": "projective_paddings_addition",
+           "top": {"name": "uniform", "a": 0, "b": 0.25},
+           "right": {"name": "uniform", "a": 0, "b": 0.25},
+           "bottom": {"name": "uniform", "a": 0, "b": 0.25},
+           "left": {"name": "uniform", "a": 0, "b": 0.25}
+       }
     """
 
     name = "projective_paddings_addition"
@@ -311,6 +381,13 @@ class Rotate(GeometricTransform):
     Rotates the quadrangle around its center.
 
     .. image:: _static/transformations/rotate.svg
+
+    .. code-block:: JSON
+
+       {
+           "name": "rotate",
+           "angle_deg": {"name": "uniform", "a": 0, "b": 360}
+       }
     """
 
     name = "rotate"
@@ -361,6 +438,13 @@ class ProjectiveShift(GeometricTransform):
     Projectively shifts the quadrangle.
 
     .. image:: _static/transformations/projective_shift.svg
+
+    .. code-block:: JSON
+
+       {
+           "name": "projective_shift",
+           "x": {"name": "truncnorm", "a": -3.1, "b": 3.1}
+       }
     """
 
     name = "projective_shift"
@@ -402,6 +486,13 @@ class Scale(GeometricTransform):
     Scales the quadrangle to the factor specified in the `distribution`.
 
     .. image:: _static/transformations/scale.svg
+
+    .. code-block:: JSON
+
+       {
+           "name": "scale",
+           "factor": {"name": "truncnorm", "a": 0.7, "b": 1.3}
+       }
     """
 
     name = "scale"
@@ -434,7 +525,11 @@ class Scale(GeometricTransform):
 class Rasterize(Transformation):
     """
     Rasterizes the image from quadrangle using projective transform and
-    the size specified in `Descriptor`.
+    the size specified in :class:`Datum`.
+
+    .. code-block:: JSON
+
+       {"name": "rasterize"}
     """
 
     name = "rasterize"
@@ -481,6 +576,13 @@ class Noising(Transformation):
     Adds normal noise to the image `numpy.random.RandomState.normal`.
 
     .. image:: _static/transformations/noising.svg
+
+    .. code-block:: JSON
+
+       {
+           "name": "noising",
+           "std": {"name": "truncnorm", "a": 0, "b": 0.1}
+       }
     """
 
     name = "noising"
@@ -513,6 +615,19 @@ class Noising(Transformation):
 class Addition(Transformation):
     """
     Add the `value` to `Datum.image`
+
+    .. image:: _static/transformations/addition.svg
+
+    .. code-block:: JSON
+
+       {
+           "name": "addition",
+           "value": {
+               "name": "truncnorm",
+               "a": -0.333,
+               "b": 0.333,
+           }
+       }
     """
 
     name = "addition"
@@ -533,6 +648,15 @@ class Addition(Transformation):
 class Multiplication(Transformation):
     """
     Multiply `Datum.image` by the `value`
+
+    .. image:: _static/transformations/multiplication.svg
+
+    .. code-block:: JSON
+
+       {
+           "name": "multiplication",
+           "factor": {"name": "truncnorm", "a": 0.333, "b": 3.0}
+       }
     """
 
     name = "multiplication"
@@ -553,6 +677,15 @@ class Multiplication(Transformation):
 class Pow(Transformation):
     """
     Raise `Datum.image` to the power of `pow`
+
+    .. image:: _static/transformations/pow.svg
+
+    .. code-block:: JSON
+
+       {
+           "name": "pow",
+           "pow": {"name": "truncnorm", "a": 0.6, "b": 3.0}
+       }
     """
 
     name = "pow"
@@ -572,6 +705,18 @@ class Pow(Transformation):
 
 
 class Log(Transformation):
+    """
+    Calculates one of the three logarithms for `Datum.image`
+
+    .. figure:: _static/transformations/log_e.svg
+
+       :math:`\\ln`
+
+       .. code-block:: JSON
+
+          {"name": "log", "base": "e"}
+    """
+
     name = "log"
 
     class Args(ArgDict):
@@ -596,6 +741,10 @@ class Log(Transformation):
 class Clip(Transformation):
     """
     Clip `Datum.image` value to `min` and `max`
+
+    .. code-block:: JSON
+
+        {"name": "clip", "min": 0.0, "max": 1.0}
     """
 
     name = "clip"
@@ -621,6 +770,10 @@ class Grayscale(Transformation):
     Set `num_output_channels` to make number ou output channels not one.
 
     .. image:: _static/transformations/grayscale.svg
+
+    .. code-block:: JSON
+
+       {"name": "grayscale"}
     """
 
     name = "grayscale"
@@ -642,6 +795,19 @@ class Grayscale(Transformation):
 
 
 class Sharpness(Transformation):
+    """
+    Makes image sharper.
+
+    .. image:: _static/transformations/sharpness.svg
+
+    .. code-block:: JSON
+
+       {
+           "name": "sharpness",
+           "factor": {"name": "truncnorm", "a": 0.5, "b": 12}
+       }
+    """
+
     name = "sharpness"
 
     kernel = (
@@ -680,7 +846,14 @@ class Shading(Transformation):
     """
     Makes a random band darker.
 
-    .. image:: _static/transformations/shading.svg
+    .. figure:: _static/transformations/shading.svg
+
+    .. code-block:: JSON
+
+       {
+           "name": "shading",
+           "value": {"name": "truncnorm", "a": -0.5, "b": 0.5}
+       }
     """
 
     name = "shading"
@@ -778,6 +951,7 @@ Args: TypeAlias = (
     | Clip.Args
     | Shading.Args
     | Grayscale.Args
+    | Resize.Args
 )
 
 

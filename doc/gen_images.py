@@ -543,10 +543,16 @@ def gen_image_transforms(path: Path) -> None:
             for i in range(n):
                 if name.startswith("flip_"):
                     datum = dummy_datum(
-                        source=torch.clone(img), width=64, height=64
+                        source=img.clone(), width=64, height=64
                     )
                 else:
-                    datum = dummy_datum(image=torch.clone(img))
+                    if name == "sharpness":
+                        from torchvision.transforms.v2 import GaussianBlur
+
+                        img_to_use = GaussianBlur(3)(img)
+                    else:
+                        img_to_use = img.clone()
+                    datum = dummy_datum(image=img_to_use)
                 try:
                     out = augmentation(datum, random)
                 except Exception as e:

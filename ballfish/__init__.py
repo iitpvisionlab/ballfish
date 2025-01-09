@@ -21,6 +21,9 @@ def _prepare(
 def create_augmentation(
     operations: Sequence[Args],
 ) -> Callable[[Datum, Random], Datum]:
+    """
+    Main function to create augmentation function.
+    """
     transformations = list(_prepare(operations))
 
     def augment(datum: Datum, random: Random) -> Datum:
