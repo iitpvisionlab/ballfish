@@ -505,6 +505,14 @@ def gen_image_transforms(path: Path) -> None:
                 ]
             ),
         ),
+        (
+            "resize",
+            create_augmentation(
+                [
+                    {"name": "resize", "width": 100, "height": 60},
+                ]
+            ),
+        ),
     )
     from PIL import Image
     from torchvision.transforms import Resize
@@ -522,7 +530,7 @@ def gen_image_transforms(path: Path) -> None:
             continue
         random = Random(13)
         svg = SVG(210, 16 * 2 + 4 + 2)
-        n = 1 if name.startswith(("log_", "flip_", "grayscale")) else 10
+        n = 1 if name.startswith(("log_", "flip_", "grayscale", "re")) else 10
         for img_idx, img in enumerate((img_gray, img_rgb)):
             svg.set_shift(1.0, 1.0 + img_idx * 20)
             svg.add_image(0, 0, img, scale=4)
