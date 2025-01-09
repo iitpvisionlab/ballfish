@@ -710,6 +710,55 @@ class Shading(Transformation):
         return datum
 
 
+_INTERPOLATION = Literal["nearest", "nearest_exact", "bilinear", "bicubic"]
+
+
+class Resize(Transformation):
+    """
+    Changes the size of a tensor. Usually this function is not needed
+    because resizing is done in `rasterize` step.
+
+    .. figure:: _static/transformations/resize.svg
+
+    .. code-block:: JSON
+
+       {"name": "resize", "width": 100, "height": 60}
+    """
+
+    name = "resize"
+
+    class Args(ArgDict):
+        name: Literal["resize"]
+        width: int
+        height: int
+        antialias: NotRequired[bool]
+        interpolation: NotRequired[_INTERPOLATION]
+
+    def __init__(
+        self,
+        width: int,
+        height: int,
+        antialias: bool = True,
+        interpolation: _INTERPOLATION = "bilinear",
+    ):
+        self._width = width
+        self._height = height
+
+        from torchvision.transforms.v2 import Resize, InterpolationMode
+
+        interpolation_value = getattr(InterpolationMode, interpolation.upper())
+        self._resize = Resize(
+            [height, width],
+            antialias=antialias,
+            interpolation=interpolation_value,
+        )
+
+    def __call__(self, datum: Datum, random: Random):
+        assert datum.image is not None, "missing datum.image"
+        datum.image = self._resize(datum.image)
+        return datum
+
+
 Args: TypeAlias = (
     Projective1ptTransformation.Args
     | Projective4ptTransformation.Args
