@@ -1,9 +1,7 @@
 from __future__ import annotations
-from typing import Callable, Sequence, Iterator, TYPE_CHECKING
+from typing import Callable, Sequence, Iterator
 from random import Random
-
-if TYPE_CHECKING:
-    from .transformation import Transformation, Datum, Args
+from .transformation import Transformation, Datum, Args
 
 
 def _prepare(
