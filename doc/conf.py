@@ -12,8 +12,8 @@ root = Path(__file__).parents[1]
 
 
 project = "Ballfish"
-copyright = "2024, iitpvisionlab"
-author = "iitpvisionlab"
+copyright = "2024, Institute for Information Transmission Problems of the Russian Academy of Sciences"
+author = "Arseniy Terekhin"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
