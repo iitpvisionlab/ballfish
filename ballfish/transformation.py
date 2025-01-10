@@ -93,7 +93,7 @@ class ArgDict(TypedDict):
     probability: NotRequired[float]
 
 
-class Projective1ptTransformation(GeometricTransform):
+class Projective1pt(GeometricTransform):
     """
     Shifts one point of the quadrangle in random direction.
 
@@ -140,7 +140,7 @@ class Projective1ptTransformation(GeometricTransform):
         return tuple(out_quad)
 
 
-class Projective4ptTransformation(GeometricTransform):
+class Projective4pt(GeometricTransform):
     """
     Shifts four point of the quadrangle in random direction.
 
@@ -933,8 +933,8 @@ class Resize(Transformation):
 
 
 Args: TypeAlias = (
-    Projective1ptTransformation.Args
-    | Projective4ptTransformation.Args
+    Projective1pt.Args
+    | Projective4pt.Args
     | Flip.Args
     | PaddingsAddition.Args
     | ProjectivePaddingsAddition.Args
