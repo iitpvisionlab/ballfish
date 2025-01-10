@@ -645,24 +645,24 @@ class Addition(Transformation):
         return datum
 
 
-class Multiplication(Transformation):
+class Multiply(Transformation):
     """
-    Multiply `Datum.image` by the `value`
+    Multiply `Datum.image` by the `factor`
 
-    .. image:: _static/transformations/multiplication.svg
+    .. image:: _static/transformations/multiply.svg
 
     .. code-block:: JSON
 
        {
-           "name": "multiplication",
+           "name": "multiply",
            "factor": {"name": "truncnorm", "a": 0.333, "b": 3.0}
        }
     """
 
-    name = "multiplication"
+    name = "multiply"
 
     class Args(ArgDict):
-        name: Literal["multiplication"]
+        name: Literal["multiply"]
         factor: DistributionParams
 
     def __init__(self, factor: DistributionParams):
@@ -671,6 +671,30 @@ class Multiplication(Transformation):
     def __call__(self, datum: Datum, random: Random):
         assert datum.image is not None, "missing datum.image"
         datum.image *= self._factor(random)
+        return datum
+
+
+class Divide(Transformation):
+    """
+    Divide `Datum.image` by the `value`.
+
+    .. code-block:: JSON
+
+       {"name": "divide", "value": 255}
+    """
+
+    name = "divide"
+
+    class Args(ArgDict):
+        name: Literal["divide"]
+        factor: DistributionParams
+
+    def __init__(self, value: DistributionParams):
+        self._value = create_distribution(value)
+
+    def __call__(self, datum: Datum, random: Random):
+        assert datum.image is not None, "missing datum.image"
+        datum.image /= self._value(random)
         return datum
 
 
@@ -945,7 +969,8 @@ Args: TypeAlias = (
     | Sharpness.Args
     | Pow.Args
     | Log.Args
-    | Multiplication.Args
+    | Multiply.Args
+    | Divide.Args
     | Addition.Args
     | Noising.Args
     | Clip.Args
