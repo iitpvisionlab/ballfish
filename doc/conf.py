@@ -34,7 +34,10 @@ sys.path.insert(0, str(root))
 
 from ballfish import __version__ as ballfish_version
 
-release = ballfish_version
+# https://www.sphinx-doc.org/en/master/usage/configuration.html
+# If your project does not draw a meaningful distinction between between a
+# ‘full’ and ‘major’ version, set both version and release to the same value.
+version = release = ballfish_version
 
 from doc.gen_images import generate_images
 
