@@ -687,7 +687,7 @@ class Divide(Transformation):
 
     class Args(ArgDict):
         name: Literal["divide"]
-        factor: DistributionParams
+        value: DistributionParams
 
     def __init__(self, value: DistributionParams):
         self._value = create_distribution(value)
