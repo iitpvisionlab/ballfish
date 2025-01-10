@@ -8,8 +8,48 @@ import torch
 from torch import Tensor
 from ballfish.transformation import create_distribution
 from ballfish.transformation import Datum, Quad
-from ballfish import create_augmentation
-from torchvision.transforms.functional import pil_to_tensor, to_pil_image
+from ballfish import create_augmentation, Args, Datum, Quad
+from torchvision.transforms.v2.functional import pil_to_tensor, to_pil_image
+
+
+def test_no_duplicated_names():
+    all_operations = set(
+        arg.__annotations__["name"]
+        ._evaluate(None, None, recursive_guard=frozenset())
+        .__args__[0]
+        for arg in Args.__args__
+    )
+    assert len(all_operations) == len(
+        Args.__args__
+    ), "Programmer error. Name duplication detected"
+
+
+def test_name_is_correct():
+    from ballfish import transformation, Transformation
+
+    for cls_name, item in vars(transformation).items():
+        if (
+            isinstance(item, type)
+            and issubclass(item, Transformation)
+            and item is not Transformation
+            and item.name != "base"
+        ):
+            expected_name = "".join(
+                word.capitalize() for word in item.name.split("_")
+            )
+            assert cls_name == expected_name, f"{cls_name} != {expected_name}"
+            assert (
+                item.Args.__annotations__["name"]
+                ._evaluate(None, None, recursive_guard=frozenset())
+                .__args__[0]
+                == item.name
+            )
+    pass
+
+
+# for now, use this module as a test
+test_name_is_correct()
+test_no_duplicated_names()
 
 
 def dummy_datum(
@@ -136,11 +176,6 @@ class SVG:
         print("gen", path)
         content = "\n".join(self._svg())
         path.write_text(content)
-
-
-def with_name(obj, name: str):
-    obj.name = name
-    return obj
 
 
 def gen_quad_transforms(path: Path):
