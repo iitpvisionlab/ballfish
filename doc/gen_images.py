@@ -24,7 +24,7 @@ def test_no_duplicated_names():
     ), "Programmer error. Name duplication detected"
 
 
-def test_name_is_correct():
+def _gather_transformations():
     from ballfish import transformation, Transformation
 
     for cls_name, item in vars(transformation).items():
@@ -34,22 +34,37 @@ def test_name_is_correct():
             and item is not Transformation
             and item.name != "base"
         ):
-            expected_name = "".join(
-                word.capitalize() for word in item.name.split("_")
-            )
-            assert cls_name == expected_name, f"{cls_name} != {expected_name}"
-            assert (
-                item.Args.__annotations__["name"]
-                ._evaluate(None, None, recursive_guard=frozenset())
-                .__args__[0]
-                == item.name
-            )
-    pass
+            yield cls_name, item
+
+
+def test_name_is_correct():
+    for cls_name, item in _gather_transformations():
+        expected_name = "".join(
+            word.capitalize() for word in item.name.split("_")
+        )
+        assert cls_name == expected_name, f"{cls_name} != {expected_name}"
+        assert (
+            item.Args.__annotations__["name"]
+            ._evaluate(None, None, recursive_guard=frozenset())
+            .__args__[0]
+            == item.name
+        )
+
+
+def test_args_match_init():
+    for cls_name, item in _gather_transformations():
+        a = set(item.Args.__annotations__) - {"name", "probability"}
+        if a:
+            b = set(item.__init__.__annotations__)
+            assert a == b, f"{a} != {b}, invalid arguments in `{cls_name}`"
+        else:
+            assert item.__init__ is object.__init__
 
 
 # for now, use this module as a test
 test_name_is_correct()
 test_no_duplicated_names()
+test_args_match_init()
 
 
 def dummy_datum(
