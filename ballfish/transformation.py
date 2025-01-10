@@ -779,7 +779,7 @@ class Grayscale(Transformation):
     name = "grayscale"
 
     class Args(ArgDict):
-        name: Literal["clip"]
+        name: Literal["grayscale"]
         num_output_channels: NotRequired[int]
 
     def __init__(self, num_output_channels: int = 1):
