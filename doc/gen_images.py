@@ -426,11 +426,11 @@ def gen_image_transforms(path: Path) -> None:
             ),
         ),
         (
-            "multiplication",
+            "multiply",
             create_augmentation(
                 [
                     {
-                        "name": "multiplication",
+                        "name": "multiply",
                         "factor": {"name": "truncnorm", "a": 1 / 3, "b": 3.0},
                     }
                 ]
