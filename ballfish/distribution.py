@@ -1,13 +1,21 @@
 from __future__ import annotations
-from typing import TypedDict, TypeAlias, TYPE_CHECKING, cast, Sequence, Literal
+from typing import (
+    TypedDict,
+    TypeAlias,
+    TYPE_CHECKING,
+    cast,
+    Sequence,
+    Literal,
+    Callable,
+)
+from random import Random
 
 Value: TypeAlias = float  # | int | str
 
 if TYPE_CHECKING:
-    from random import Random
-    from typing import Callable, NotRequired
+    from typing import NotRequired
 
-    Distribution: TypeAlias = Callable[[Random], float]
+Distribution: TypeAlias = Callable[[Random], float]
 
 
 class UniformParams(TypedDict):
