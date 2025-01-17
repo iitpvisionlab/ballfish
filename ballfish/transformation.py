@@ -10,8 +10,6 @@ from typing import (
 from math import radians, hypot, sin, cos
 from random import Random
 import operator
-import numpy.typing as npt
-import numpy as np
 import torch
 from torch import Tensor
 from .distribution import create_distribution, DistributionParams, Distribution
@@ -22,7 +20,6 @@ from collections.abc import Sequence
 if TYPE_CHECKING:
     from typing import NotRequired
 
-U8Array: TypeAlias = npt.NDArray[np.uint8]
 PerEnum: TypeAlias = Literal["channel", "batch", "tensor"]
 
 all_transformation_classes: dict[str, Type[Transformation]] = {}
@@ -966,11 +963,12 @@ class Shading(Transformation):
         name: Literal["shading"]
         value: DistributionParams
 
-    def __init__(self, value: DistributionParams):
+    def __init__(self, value: DistributionParams) -> None:
         self._value = create_distribution(value)
 
-    def get_mask(self, width: int, height: int, random: Random):
-        y, x = np.ogrid[0:height, 0:width]
+    def get_mask(self, width: int, height: int, random: Random) -> Tensor:
+        y = torch.arange(0, height).unsqueeze(1)
+        x = torch.arange(0, width).unsqueeze(0)
         x1, y1 = random.randint(0, width - 1), random.randint(0, height - 1)
         x2, y2 = random.randint(0, width - 1), random.randint(0, height - 1)
         return x * (y2 - y1) - y * (x2 - x1) > x1 * y2 - x2 * y1
@@ -980,7 +978,7 @@ class Shading(Transformation):
         height, width = datum.image.shape[-2:]
         for batch in datum.image:
             mask = self.get_mask(width, height, random)
-            masked_pixels_count = np.count_nonzero(mask)
+            masked_pixels_count = torch.count_nonzero(mask)
             if masked_pixels_count == 0:
                 continue
             batch[:, mask] += self._value(random) * batch.max()
