@@ -39,7 +39,7 @@ class Datum:
         width: int | None = None,
         height: int | None = None,
         image: Tensor | None = None,
-    ):
+    ) -> None:
         assert source is None or source.ndim == 4, source.ndim
         #: Main input that :class:`Rasterize` takes as input.
         #: Expected to be in (N, C, H, W) format.  This input unfortunately
@@ -66,7 +66,7 @@ class Datum:
 class Transformation:
     name: str
 
-    def __init_subclass__(cls):
+    def __init_subclass__(cls) -> None:
         if cls.name != "base":
             assert cls.name not in all_transformation_classes
             all_transformation_classes[cls.name] = cls
@@ -119,7 +119,7 @@ class Projective1pt(GeometricTransform):
         self,
         x: DistributionParams,
         y: DistributionParams,
-    ):
+    ) -> None:
         """
         :param x: `create_distribution` arguments, dict
         :param y: `create_distribution` arguments, dict
@@ -166,7 +166,7 @@ class Projective4pt(GeometricTransform):
         self,
         x: DistributionParams,
         y: DistributionParams,
-    ):
+    ) -> None:
         """
         :param x: `create_distribution` arguments, dict
         :param y: `create_distribution` arguments, dict
@@ -210,7 +210,7 @@ class Flip(GeometricTransform):
         direction: Literal[
             "horizontal", "vertical", "primary_diagonal", "secondary_diagonal"
         ] = "horizontal",
-    ):
+    ) -> None:
         self._direction = getattr(self, direction)
 
     @staticmethod
@@ -293,7 +293,7 @@ class PaddingsAddition(GeometricTransform):
         right: DistributionParams = 0.0,
         bottom: DistributionParams = 0.0,
         left: DistributionParams = 0.0,
-    ):
+    ) -> None:
         self._top = create_distribution(top)
         self._right = create_distribution(right)
         self._bottom = create_distribution(bottom)
@@ -349,7 +349,7 @@ class ProjectivePaddingsAddition(PaddingsAddition):
         right: DistributionParams = 0.0,
         bottom: DistributionParams = 0.0,
         left: DistributionParams = 0.0,
-    ):
+    ) -> None:
         self._top = create_distribution(top)
         self._right = create_distribution(right)
         self._bottom = create_distribution(bottom)
@@ -396,7 +396,7 @@ class Rotate(GeometricTransform):
         name: Literal["rotate"]
         angle_deg: DistributionParams
 
-    def __init__(self, angle_deg: DistributionParams):
+    def __init__(self, angle_deg: DistributionParams) -> None:
         """
         :param angle_deg: `create_distribution` arguments, dict
         """
@@ -458,7 +458,7 @@ class ProjectiveShift(GeometricTransform):
         self,
         x: DistributionParams = 0.0,
         y: DistributionParams = 0.0,
-    ):
+    ) -> None:
         """
         :param x: `create_distribution` arguments, dict
         :param y: `create_distribution` arguments, dict
@@ -501,7 +501,7 @@ class Scale(GeometricTransform):
         name: Literal["scale"]
         factor: DistributionParams
 
-    def __init__(self, factor: DistributionParams):
+    def __init__(self, factor: DistributionParams) -> None:
         """
         :param factor: `create_distribution` arguments, dict
         """
@@ -602,7 +602,7 @@ class Noise(Transformation):
         std: DistributionParams,
         mean: DistributionParams | None = None,
         type: NoiseType = "homoscedastic",
-    ):
+    ) -> None:
         if mean is None:
             mean = 0.0 if type == "homoscedastic" else 1.0
         self._mean = create_distribution(mean)
@@ -636,7 +636,7 @@ class OperationTransform(Transformation):
     name = "base"
     _apply: Callable[[Tensor, Random], None]
 
-    def __init__(self, per: PerEnum):
+    def __init__(self, per: PerEnum) -> None:
         self._apply = getattr(self, f"_apply_{per}")
 
     @staticmethod
@@ -710,7 +710,9 @@ class Add(OperationTransform):
         value: DistributionsParams
         per: NotRequired[PerEnum]
 
-    def __init__(self, value: DistributionsParams, per: PerEnum = "tensor"):
+    def __init__(
+        self, value: DistributionsParams, per: PerEnum = "tensor"
+    ) -> None:
         super().__init__(per)
         self._value = self._create_distributions(value, per)
 
@@ -739,16 +741,14 @@ class Multiply(OperationTransform):
         factor: DistributionsParams
         per: NotRequired[PerEnum]
 
-    def __init__(self, factor: DistributionsParams, per: PerEnum = "tensor"):
+    def __init__(
+        self, factor: DistributionsParams, per: PerEnum = "tensor"
+    ) -> None:
         super().__init__(per)
         self._factor = self._create_distributions(factor, per)
 
-    def _op(self, image: Tensor, random: Random):
-        try:
-            image *= self._factor(random)
-        except RuntimeError:
-            breakpoint()
-            pass
+    def _op(self, image: Tensor, random: Random) -> None:
+        image *= self._factor(random)
 
 
 class Divide(OperationTransform):
@@ -767,7 +767,9 @@ class Divide(OperationTransform):
         value: DistributionsParams
         per: NotRequired[PerEnum]
 
-    def __init__(self, value: DistributionsParams, per: PerEnum = "tensor"):
+    def __init__(
+        self, value: DistributionsParams, per: PerEnum = "tensor"
+    ) -> None:
         super().__init__(per)
         self._value = self._create_distributions(value, per)
 
@@ -796,11 +798,13 @@ class Pow(OperationTransform):
         pow: DistributionsParams
         per: NotRequired[PerEnum]
 
-    def __init__(self, pow: DistributionsParams, per: PerEnum = "tensor"):
+    def __init__(
+        self, pow: DistributionsParams, per: PerEnum = "tensor"
+    ) -> None:
         super().__init__(per)
         self._pow = self._create_distributions(pow, per)
 
-    def _op(self, image: Tensor, random: Random):
+    def _op(self, image: Tensor, random: Random) -> None:
         pow = self._pow(random)
         torch.pow(image, pow, out=image)
 
@@ -824,14 +828,14 @@ class Log(Transformation):
         name: Literal["log"]
         base: NotRequired[Literal["2", "e", "10"]]
 
-    def __init__(self, base: Literal["2", "e", "10"] = "e"):
+    def __init__(self, base: Literal["2", "e", "10"] = "e") -> None:
         self._log_func = {
             "2": torch.log2,
             "e": torch.log,
             "10": torch.log10,
         }[base]
 
-    def __call__(self, datum: Datum, random: Random):
+    def __call__(self, datum: Datum, random: Random) -> Datum:
         assert datum.image is not None, "missing datum.image"
 
         datum.image += 1.0
@@ -855,10 +859,10 @@ class Clip(Transformation):
         min: NotRequired[float]
         max: NotRequired[float]
 
-    def __init__(self, min: float, max: float):
+    def __init__(self, min: float, max: float) -> None:
         self._min, self._max = min, max
 
-    def __call__(self, datum: Datum, random: Random):
+    def __call__(self, datum: Datum, random: Random) -> Datum:
         assert datum.image is not None, "missing datum.image"
 
         torch.clip(datum.image, min=self._min, max=self._max, out=datum.image)
@@ -883,10 +887,10 @@ class Grayscale(Transformation):
         name: Literal["grayscale"]
         num_output_channels: NotRequired[int]
 
-    def __init__(self, num_output_channels: int = 1):
+    def __init__(self, num_output_channels: int = 1) -> None:
         self._channels = num_output_channels
 
-    def __call__(self, datum: Datum, random: Random):
+    def __call__(self, datum: Datum, random: Random) -> Datum:
         assert datum.image is not None, "missing datum.image"
 
         from torchvision.transforms.v2.functional import rgb_to_grayscale
@@ -921,10 +925,10 @@ class Sharpness(Transformation):
         name: Literal["sharpness"]
         factor: DistributionParams
 
-    def __init__(self, factor: DistributionParams):
+    def __init__(self, factor: DistributionParams) -> None:
         self._factor = create_distribution(factor)
 
-    def __call__(self, datum: Datum, random: Random):
+    def __call__(self, datum: Datum, random: Random) -> Datum:
         assert datum.image is not None, "missing datum.image"
 
         from torchvision.transforms.v2.functional import adjust_sharpness
@@ -1015,7 +1019,7 @@ class Resize(Transformation):
         height: int,
         antialias: bool = True,
         interpolation: _INTERPOLATION = "bilinear",
-    ):
+    ) -> None:
         self._width = width
         self._height = height
 
@@ -1028,7 +1032,7 @@ class Resize(Transformation):
             interpolation=interpolation_value,
         )
 
-    def __call__(self, datum: Datum, random: Random):
+    def __call__(self, datum: Datum, random: Random) -> Datum:
         assert datum.image is not None, "missing datum.image"
         datum.image = self._resize(datum.image)
         return datum
