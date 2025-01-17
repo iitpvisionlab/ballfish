@@ -138,7 +138,7 @@ class SVG:
         path.write_text(content)
 
 
-def gen_quad_transforms(path: Path):
+def gen_quad_transforms(path: Path, force: bool) -> None:
     augmentations = (
         (
             "projective_shift",
@@ -245,7 +245,7 @@ def gen_quad_transforms(path: Path):
     random = Random(13)
     for name, augmentation in augmentations:
         out_path_svg = path / (name + ".svg")
-        if out_path_svg.exists():
+        if out_path_svg.exists() and not force:
             continue
         svg = SVG(26, 6.0)
         n = 1 if name == "flip" else 10
@@ -259,7 +259,7 @@ def gen_quad_transforms(path: Path):
         svg.save(out_path_svg)
 
 
-def gen_distributions(path: Path):
+def gen_distributions(path: Path, force: bool) -> None:
     distributions = (
         (
             create_distribution({"name": "uniform", "a": -0.75, "b": 0.75}),
@@ -314,7 +314,7 @@ def gen_distributions(path: Path):
     )
     for distribution, name in distributions:
         out_path_svg = path / (name + ".svg")
-        if out_path_svg.exists():
+        if out_path_svg.exists() and not force:
             continue
         random = Random(13)
         svg = SVG(3.0, 3.0)
@@ -361,7 +361,7 @@ def gen_distributions(path: Path):
         svg.save(out_path_svg)
 
 
-def gen_image_transforms(path: Path) -> None:
+def gen_image_transforms(path: Path, force: bool) -> None:
     augmentations = (
         (
             "pow",
@@ -521,7 +521,7 @@ def gen_image_transforms(path: Path) -> None:
 
     for name, augmentation in augmentations:
         out_path_svg = path / (name + ".svg")
-        if out_path_svg.exists():
+        if out_path_svg.exists() and not force:
             continue
         random = Random(13)
         svg = SVG(210, 16 * 2 + 4 + 2)
@@ -563,13 +563,17 @@ def gen_image_transforms(path: Path) -> None:
         svg.save(out_path_svg)
 
 
-def generate_images():
+def generate_images(force: bool = False):
     out_path = Path(__file__).parent / "_static" / "transformations"
     out_path.mkdir(parents=True, exist_ok=True)
-    gen_quad_transforms(out_path)
-    gen_distributions(out_path)
-    gen_image_transforms(out_path)
+    gen_quad_transforms(out_path, force)
+    gen_distributions(out_path, force)
+    gen_image_transforms(out_path, force)
 
 
 if __name__ == "__main__":
-    generate_images()
+    import argparse
+
+    parser = argparse.ArgumentParser("generate svgs for documentation")
+    parser.add_argument("--force", action="store_true")
+    generate_images(**vars(parser.parse_args()))
