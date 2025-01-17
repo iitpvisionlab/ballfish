@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import (
+    Callable,
     TypeAlias,
     TypedDict,
     Literal,
@@ -12,15 +13,16 @@ import numpy.typing as npt
 import numpy as np
 import torch
 from torch import Tensor
-from .distribution import create_distribution, DistributionParams
+from .distribution import create_distribution, DistributionParams, Distribution
 from .projective import Quad, projection_transform_point, calc_projection
 from .projective_transform import projective_transform
+from collections.abc import Sequence
 
 if TYPE_CHECKING:
     from typing import NotRequired
 
 U8Array: TypeAlias = npt.NDArray[np.uint8]
-
+PerEnum: TypeAlias = Literal["channel", "batch", "tensor"]
 
 all_transformation_classes: dict[str, Type[Transformation]] = {}
 
@@ -612,16 +614,78 @@ class Noising(Transformation):
         return datum
 
 
-class Addition(Transformation):
+DistributionsParams: TypeAlias = (
+    DistributionParams | Sequence[DistributionParams]
+)
+
+
+class OperationTransform(Transformation):
+    """
+    Allow operation applying to "channel", "batch" or "tensor"
+    """
+
+    name = "base"
+    _apply: Callable[[Tensor, Random], None]
+
+    def __init__(self, per: PerEnum):
+        self._apply = getattr(self, f"_apply_{per}")
+
+    @staticmethod
+    def _create_distributions(
+        value: DistributionsParams, per: PerEnum = "tensor"
+    ) -> Distribution | Callable[[Random], Tensor]:
+        """
+        Convenient way to user to specify custom distribution for each channel
+        """
+        if isinstance(value, Sequence):
+            if per == "channel":
+                raise ValueError(
+                    "Can't use per channel operation when "
+                    "multiple channels specified"
+                )
+            distributions = [create_distribution(d) for d in value]
+
+            def channels_distribution(
+                random: Random,
+                distributions: list[Distribution] = distributions,
+            ) -> Tensor:
+                return torch.tensor([[[d(random)]] for d in distributions])
+
+            return channels_distribution
+        else:
+            return create_distribution(value)
+
+    def _op(self, image: Tensor, random: Random) -> None:
+        raise NotImplementedError
+
+    def _apply_tensor(self, image: Tensor, random: Random) -> None:
+        self._op(image, random)
+
+    def _apply_batch(self, image: Tensor, random: Random) -> None:
+        for batch in image:
+            self._op(batch, random)
+
+    def _apply_channel(self, image: Tensor, random: Random) -> None:
+        for batch in image:
+            for channel in batch:
+                self._op(channel, random)
+
+    def __call__(self, datum: Datum, random: Random) -> Datum:
+        assert datum.image is not None, "missing datum.image"
+        self._apply(datum.image, random)
+        return datum
+
+
+class Add(OperationTransform):
     """
     Add the `value` to `Datum.image`
 
-    .. image:: _static/transformations/addition.svg
+    .. image:: _static/transformations/add.svg
 
     .. code-block:: JSON
 
        {
-           "name": "addition",
+           "name": "add",
            "value": {
                "name": "truncnorm",
                "a": -0.333,
@@ -630,22 +694,22 @@ class Addition(Transformation):
        }
     """
 
-    name = "addition"
+    name = "add"
 
     class Args(ArgDict):
-        name: Literal["addition"]
-        value: DistributionParams
+        name: Literal["add"]
+        value: DistributionsParams
+        per: NotRequired[PerEnum]
 
-    def __init__(self, value: DistributionParams):
-        self._value = create_distribution(value)
+    def __init__(self, value: DistributionsParams, per: PerEnum = "tensor"):
+        super().__init__(per)
+        self._value = self._create_distributions(value, per)
 
-    def __call__(self, datum: Datum, random: Random):
-        assert datum.image is not None, "missing datum.image"
-        datum.image += self._value(random)
-        return datum
+    def _op(self, image: Tensor, random: Random) -> None:
+        image += self._value(random)
 
 
-class Multiply(Transformation):
+class Multiply(OperationTransform):
     """
     Multiply `Datum.image` by the `factor`
 
@@ -663,18 +727,22 @@ class Multiply(Transformation):
 
     class Args(ArgDict):
         name: Literal["multiply"]
-        factor: DistributionParams
+        factor: DistributionsParams
+        per: NotRequired[PerEnum]
 
-    def __init__(self, factor: DistributionParams):
-        self._factor = create_distribution(factor)
+    def __init__(self, factor: DistributionsParams, per: PerEnum = "tensor"):
+        super().__init__(per)
+        self._factor = self._create_distributions(factor, per)
 
-    def __call__(self, datum: Datum, random: Random):
-        assert datum.image is not None, "missing datum.image"
-        datum.image *= self._factor(random)
-        return datum
+    def _op(self, image: Tensor, random: Random):
+        try:
+            image *= self._factor(random)
+        except RuntimeError:
+            breakpoint()
+            pass
 
 
-class Divide(Transformation):
+class Divide(OperationTransform):
     """
     Divide `Datum.image` by the `value`.
 
@@ -687,18 +755,18 @@ class Divide(Transformation):
 
     class Args(ArgDict):
         name: Literal["divide"]
-        value: DistributionParams
+        value: DistributionsParams
+        per: NotRequired[PerEnum]
 
-    def __init__(self, value: DistributionParams):
-        self._value = create_distribution(value)
+    def __init__(self, value: DistributionsParams, per: PerEnum = "tensor"):
+        super().__init__(per)
+        self._value = self._create_distributions(value, per)
 
-    def __call__(self, datum: Datum, random: Random):
-        assert datum.image is not None, "missing datum.image"
-        datum.image /= self._value(random)
-        return datum
+    def _op(self, image: Tensor, random: Random):
+        image /= self._value(random)
 
 
-class Pow(Transformation):
+class Pow(OperationTransform):
     """
     Raise `Datum.image` to the power of `pow`
 
@@ -716,16 +784,16 @@ class Pow(Transformation):
 
     class Args(ArgDict):
         name: Literal["pow"]
-        pow: DistributionParams
+        pow: DistributionsParams
+        per: NotRequired[PerEnum]
 
-    def __init__(self, pow: DistributionParams):
-        self._pow = create_distribution(pow)
+    def __init__(self, pow: DistributionsParams, per: PerEnum = "tensor"):
+        super().__init__(per)
+        self._pow = self._create_distributions(pow, per)
 
-    def __call__(self, datum: Datum, random: Random):
-        assert datum.image is not None, "missing datum.image"
+    def _op(self, image: Tensor, random: Random):
         pow = self._pow(random)
-        torch.pow(datum.image, pow, out=datum.image)
-        return datum
+        torch.pow(image, pow, out=image)
 
 
 class Log(Transformation):
@@ -971,7 +1039,7 @@ Args: TypeAlias = (
     | Log.Args
     | Multiply.Args
     | Divide.Args
-    | Addition.Args
+    | Add.Args
     | Noising.Args
     | Clip.Args
     | Shading.Args
