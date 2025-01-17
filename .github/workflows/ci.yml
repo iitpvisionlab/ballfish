@@ -20,6 +20,8 @@ jobs:
           python-version: '3.10'
           cache: 'pip'
       - uses: psf/black@stable
+      - run: pip install .
+      - run: python -m unittest
       - name: wheel
         run: |
           pip install build
