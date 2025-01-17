@@ -48,6 +48,7 @@ class ProgrammerErrors(TestCase):
             a = set(item.Args.__annotations__) - {"name", "probability"}
             if a:
                 b = set(item.__init__.__annotations__)
+                b.remove("return")
                 self.assertEqual(a, b, f"invalid arguments in `{cls_name}`")
             else:
                 self.assertIs(item.__init__, object.__init__)
