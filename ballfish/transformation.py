@@ -36,10 +36,10 @@ class Datum:
 
     def __init__(
         self,
-        source: Tensor | None,
-        quad: Quad,
-        width: int,
-        height: int,
+        source: Tensor | None = None,
+        quad: Quad | None = None,
+        width: int | None = None,
+        height: int | None = None,
         image: Tensor | None = None,
     ):
         assert source is None or source.ndim == 4, source.ndim
@@ -48,8 +48,14 @@ class Datum:
         #: must be in `torch.float{32,64}` formats because torch's
         #: `torch.nn.functional.grid_sample` doesn't work with other types.
         self.source = source
-        #: rois
-        self.quads = [quad] * source.shape[0]
+        if source is not None:
+            if width is None or height is None:
+                assert width is None and height is None
+                height, width = source.shape[-2:]
+            if quad is None:
+                quad = (0, 0), (width, 0), (width, height), (0, height)
+            #: rois
+            self.quads = [quad] * source.shape[0]
         #: Width for :class:`Rasterize` and for calculating
         #: projective transformations
         self.width = width
@@ -57,12 +63,6 @@ class Datum:
         self.height = height
         #: the output image, must be `None` when :class:`Rasterize` is used
         self.image = image
-
-    @classmethod
-    def from_tensor(cls, image: Tensor) -> Datum:
-        h, w = image.shape[-2:]
-        quad = (0, 0), (w, 0), (w, h), (0, h)
-        return cls(image, quad=quad, width=w, height=h)
 
 
 class Transformation:
