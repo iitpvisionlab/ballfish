@@ -9,6 +9,7 @@ from typing import (
 )
 from math import radians, hypot, sin, cos
 from random import Random
+import operator
 import numpy.typing as npt
 import numpy as np
 import torch
@@ -544,6 +545,7 @@ class Rasterize(Transformation):
         mats_py = [calc_projection(rect, quad) for quad in datum.quads]
 
         src = datum.source
+        assert src is not None, "Source must be specified"
         if len(mats_py) == 1:
             mat = torch.tensor(*mats_py, dtype=torch.float32)
             datum.image = projective_transform(
@@ -573,32 +575,42 @@ class Rasterize(Transformation):
         )
 
 
-class Noising(Transformation):
+NoiseType: TypeAlias = Literal["heteroscedastic", "homoscedastic"]
+
+
+class Noise(Transformation):
     """
     Adds normal noise to the image `numpy.random.RandomState.normal`.
 
-    .. image:: _static/transformations/noising.svg
+    .. image:: _static/transformations/noise.svg
 
     .. code-block:: JSON
 
        {
-           "name": "noising",
+           "name": "noise",
            "std": {"name": "truncnorm", "a": 0, "b": 0.1}
        }
     """
 
-    name = "noising"
+    name = "noise"
 
     class Args(ArgDict):
-        name: Literal["noising"]
-        mean: NotRequired[DistributionParams]
+        name: Literal["noise"]
         std: DistributionParams
+        mean: NotRequired[DistributionParams]
+        type: NotRequired[NoiseType]
 
     def __init__(
-        self, std: DistributionParams, mean: DistributionParams = 0.0
+        self,
+        std: DistributionParams,
+        mean: DistributionParams | None = None,
+        type: NoiseType = "homoscedastic",
     ):
+        if mean is None:
+            mean = 0.0 if type == "homoscedastic" else 1.0
         self._mean = create_distribution(mean)
         self._std = create_distribution(std)
+        self._op = operator.iadd if type == "homoscedastic" else operator.imul
 
     def __call__(self, datum: Datum, random: Random):
         assert datum.image is not None, "missing datum.image"
@@ -610,7 +622,7 @@ class Noising(Transformation):
             noise *= std
         if mean != 0.0:
             noise += mean
-        datum.image += noise
+        self._op(datum.image, noise)
         return datum
 
 
@@ -1040,7 +1052,7 @@ Args: TypeAlias = (
     | Multiply.Args
     | Divide.Args
     | Add.Args
-    | Noising.Args
+    | Noise.Args
     | Clip.Args
     | Shading.Args
     | Grayscale.Args

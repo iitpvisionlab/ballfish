@@ -30,7 +30,7 @@ augmentation = create_augmentation(
         {"name": "rasterize"},
         # Third, apply raster transformations
         {
-            "name": "noising",
+            "name": "noise",
             "std": {"name": "truncnorm", "a": 0, "b": 1 / 10},
         },
     ]
