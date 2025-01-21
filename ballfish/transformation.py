@@ -594,13 +594,23 @@ class Noise(Transformation):
     """
     Adds normal noise to the image `numpy.random.RandomState.normal`.
 
-    .. image:: _static/transformations/noise.svg
+    .. image:: _static/transformations/noise_homoscedastic.svg
 
     .. code-block:: JSON
 
        {
            "name": "noise",
            "std": {"name": "truncnorm", "a": 0, "b": 0.1}
+       }
+
+    .. image:: _static/transformations/noise_heteroscedastic.svg
+
+    .. code-block:: JSON
+
+       {
+           "name": "noise",
+           "std": {"name": "truncnorm", "a": 0, "b": 0.1},
+           "type": "heteroscedastic"
        }
     """
 

@@ -412,12 +412,24 @@ def gen_image_transforms(path: Path, force: bool) -> None:
             ),
         ),
         (
-            "noise",
+            "noise_homoscedastic",
             create_augmentation(
                 [
                     {
                         "name": "noise",
                         "std": {"name": "truncnorm", "a": 0, "b": 1 / 10},
+                    }
+                ]
+            ),
+        ),
+        (
+            "noise_heteroscedastic",
+            create_augmentation(
+                [
+                    {
+                        "name": "noise",
+                        "std": {"name": "truncnorm", "a": 0, "b": 1 / 10},
+                        "type": "heteroscedastic",
                     }
                 ]
             ),
