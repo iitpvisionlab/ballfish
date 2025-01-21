@@ -5,18 +5,21 @@ Copyright (c) 2024 Dmitry Sidorchuk
 """
 
 from __future__ import annotations
-from typing import Literal
+from typing import Literal, TypeAlias
 import torch
 from torch import Tensor
 import torch.nn.functional as F
+
+Mode: TypeAlias = Literal["bilinear", "nearest", "bicubic"]
+PaddingMode: TypeAlias = Literal["zeros", "border", "reflection"]
 
 
 def projective_transform(
     src: Tensor,
     inverse_matrix: Tensor,
     dst_size: tuple[int, int],
-    mode: Literal["bilinear", "nearest", "bicubic"] = "bilinear",
-    padding_mode: Literal["zeros", "border", "reflection"] = "zeros",
+    mode: Mode = "bilinear",
+    padding_mode: PaddingMode = "zeros",
 ) -> Tensor:
     """
     Parameters

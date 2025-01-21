@@ -4,6 +4,7 @@ from unittest import TestCase
 from ballfish import create_augmentation, Datum
 from random import Random
 import torch
+import torch.nn.functional as F
 from unittest.mock import patch
 
 
@@ -150,3 +151,79 @@ class NoiseTest(TestCase):
         )
         reference = torch.arange(2 * 3 * 2 * 2).reshape(2, 3, 2, 2) * 3.0
         self.assertTrue(torch.all(result.image == reference))
+
+
+class RasterizeTest(TestCase):
+    image = (
+        F.pad(
+            torch.tensor(
+                [
+                    [1, 1, 1],
+                    [1, 0, 0],
+                    [1, 1, 1],
+                    [1, 0, 0],
+                    [1, 0, 0],
+                ],
+                dtype=torch.float32,
+            ),
+            (2, 2, 2, 2),
+        )
+        .unsqueeze(0)
+        .unsqueeze(0)
+    )
+
+    def test_padding_border(self):
+        result = create_augmentation(
+            [
+                {"name": "rotate", "angle_deg": 45.0},
+                {"name": "rasterize", "padding_mode": "border"},
+            ]
+        )(
+            Datum(source=self.image + 1.0),
+            cast(Random, None),
+        )
+        reference = torch.tensor(
+            [
+                [1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000],
+                [1.0000, 1.0000, 1.1005, 1.0000, 1.0000, 1.0000, 1.0000],
+                [1.0000, 1.1716, 1.8787, 1.2426, 1.0000, 1.0000, 1.0000],
+                [1.1005, 1.8787, 1.4142, 1.2929, 1.5858, 1.0000, 1.0000],
+                [1.0000, 1.5858, 1.7929, 2.0000, 1.2929, 1.0000, 1.0000],
+                [1.0000, 1.0000, 1.5858, 1.7929, 1.0000, 1.0000, 1.0000],
+                [1.0000, 1.0000, 1.0000, 1.5858, 1.6213, 1.0000, 1.0000],
+                [1.0000, 1.0000, 1.0000, 1.0000, 1.1005, 1.0000, 1.0000],
+                [1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000],
+            ]
+        )
+        assert result.image is not None
+        torch.testing.assert_close(
+            result.image[0, 0], reference, rtol=1e-5, atol=1e-3
+        )
+
+    def test_padding_zeros(self):
+        result = create_augmentation(
+            [
+                {"name": "rotate", "angle_deg": 45.0},
+                {"name": "rasterize", "padding_mode": "zeros"},
+            ]
+        )(
+            Datum(source=self.image + 1.0),
+            cast(Random, None),
+        )
+        reference = torch.tensor(
+            [
+                [0.0503, 0.7574, 1.0000, 1.0000, 0.4645, 0.0000, 0.0000],
+                [0.7574, 1.0000, 1.1005, 1.0000, 1.0000, 0.4645, 0.0000],
+                [1.0000, 1.1716, 1.8787, 1.2426, 1.0000, 1.0000, 0.4645],
+                [1.1005, 1.8787, 1.4142, 1.2929, 1.5858, 1.0000, 1.0000],
+                [1.0000, 1.5858, 1.7929, 2.0000, 1.2929, 1.0000, 1.0000],
+                [1.0000, 1.0000, 1.5858, 1.7929, 1.0000, 1.0000, 1.0000],
+                [0.4645, 1.0000, 1.0000, 1.5858, 1.6213, 1.0000, 1.0000],
+                [0.0000, 0.4645, 1.0000, 1.0000, 1.1005, 1.0000, 0.7574],
+                [0.0000, 0.0000, 0.4645, 1.0000, 1.0000, 0.7574, 0.0503],
+            ]
+        )
+        assert result.image is not None
+        torch.testing.assert_close(
+            result.image[0, 0], reference, rtol=1e-5, atol=1e-3
+        )

@@ -14,7 +14,7 @@ import torch
 from torch import Tensor
 from .distribution import create_distribution, DistributionParams, Distribution
 from .projective import Quad, projection_transform_point, calc_projection
-from .projective_transform import projective_transform
+from .projective_transform import projective_transform, Mode, PaddingMode
 from collections.abc import Sequence
 
 if TYPE_CHECKING:
@@ -533,9 +533,19 @@ class Rasterize(Transformation):
     """
 
     name = "rasterize"
+    _mode: Mode
+    _padding_mode: PaddingMode
 
     class Args(TypedDict):
         name: Literal["rasterize"]
+        mode: NotRequired[Mode]
+        padding_mode: NotRequired[PaddingMode]
+
+    def __init__(
+        self, mode: Mode = "bilinear", padding_mode: PaddingMode = "zeros"
+    ) -> None:
+        self._mode = mode
+        self._padding_mode = padding_mode
 
     def __call__(self, datum: Datum, _random: Random) -> Datum:
         rect = self.rect(datum)
@@ -543,10 +553,15 @@ class Rasterize(Transformation):
 
         src = datum.source
         assert src is not None, "Source must be specified"
+        assert datum.height is not None and datum.width is not None
         if len(mats_py) == 1:
             mat = torch.tensor(*mats_py, dtype=torch.float32)
             datum.image = projective_transform(
-                src, mat, (datum.height, datum.width)
+                src,
+                mat,
+                (datum.height, datum.width),
+                mode=self._mode,
+                padding_mode=self._padding_mode,
             )
         else:
             datum.image = torch.empty(
