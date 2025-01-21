@@ -3,7 +3,7 @@ from typing import Callable, Sequence, Iterator
 from random import Random
 from .transformation import Transformation, Datum, Args, Quad
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 
 def _prepare(
