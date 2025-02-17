@@ -8,7 +8,7 @@ from .transformation import (
     Quad as Quad,
 )
 
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 
 
 def _prepare(
