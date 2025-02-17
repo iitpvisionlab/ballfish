@@ -111,6 +111,8 @@ def create_distribution(
     """
     if isinstance(kwargs, (float, int)):
         kwargs = {"name": "constant", "value": kwargs}
+    else:
+        kwargs = kwargs.copy()
     match kwargs["name"]:
         case "uniform":
 
