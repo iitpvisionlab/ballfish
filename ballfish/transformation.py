@@ -1,11 +1,12 @@
 from __future__ import annotations
 from typing import (
     Callable,
+    ClassVar,
+    Literal,
+    TYPE_CHECKING,
+    Type,
     TypeAlias,
     TypedDict,
-    Literal,
-    Type,
-    TYPE_CHECKING,
 )
 from math import radians, hypot, sin, cos
 from random import Random
@@ -64,7 +65,7 @@ class Datum:
 
 
 class Transformation:
-    name: str
+    name: ClassVar[str]
 
     def __init_subclass__(cls) -> None:
         if cls.name != "base":
