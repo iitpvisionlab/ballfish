@@ -7,6 +7,10 @@ from .transformation import (
     Args as Args,
     Quad as Quad,
 )
+from .transformation import (
+    create_distribution as create_distribution,
+    DistributionParams as DistributionParams,
+)
 
 __version__ = "0.3.2"
 
