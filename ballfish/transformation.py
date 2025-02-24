@@ -1064,6 +1064,62 @@ class Resize(Transformation):
         return datum
 
 
+class OneOf(Transformation):
+    """
+    Apply one of the specified operations. In this mode, operation
+    probabilities are used as weights, 1.0 by default
+
+    .. figure:: _static/transformations/one_of.svg
+
+    .. code-block:: JSON
+
+       {
+           "name": "one_of",
+           "operations": [
+               {
+                   "name": "shading",
+                   "value": {
+                       "name": "truncnorm",
+                       "a": -0.5,
+                       "b": 0.5
+                   }
+               },
+               {
+                   "name": "noise",
+                   "std": {
+                       "name": "truncnorm",
+                       "a": 0,
+                       "b": 0.1,
+                   },
+                   "type": "heteroscedastic"
+               }
+           ]
+       }
+
+    """
+
+    name = "one_of"
+
+    class Args(ArgDict):
+        name: Literal["one_of"]
+        operations: list[Args]
+
+    def __init__(self, operations: list[Args]) -> None:
+        self._operations = [create(op) for op in operations]
+        values = [
+            (idx, op.get("probability", 1.0))
+            for idx, op in enumerate(operations)
+        ]
+        self._distribution = create_distribution(
+            {"name": "choice", "values": values}
+        )
+
+    def __call__(self, datum: Datum, random: Random) -> Datum:
+        idx: int = self._distribution(random)
+        one_of_operation = self._operations[idx]
+        return one_of_operation(datum, random)
+
+
 Args: TypeAlias = (
     Projective1pt.Args
     | Projective4pt.Args
@@ -1085,6 +1141,7 @@ Args: TypeAlias = (
     | Shading.Args
     | Grayscale.Args
     | Resize.Args
+    | OneOf.Args
 )
 
 

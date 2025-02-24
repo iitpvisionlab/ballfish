@@ -520,6 +520,35 @@ def gen_image_transforms(path: Path, force: bool) -> None:
                 ]
             ),
         ),
+        (
+            "one_of",
+            create_augmentation(
+                [
+                    {
+                        "name": "one_of",
+                        "operations": [
+                            {
+                                "name": "shading",
+                                "value": {
+                                    "name": "truncnorm",
+                                    "a": -0.5,
+                                    "b": 0.5,
+                                },
+                            },
+                            {
+                                "name": "noise",
+                                "std": {
+                                    "name": "truncnorm",
+                                    "a": 0,
+                                    "b": 1 / 10,
+                                },
+                                "type": "heteroscedastic",
+                            },
+                        ],
+                    }
+                ]
+            ),
+        ),
     )
     from PIL import Image
     from torchvision.transforms import Resize
