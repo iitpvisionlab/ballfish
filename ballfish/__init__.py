@@ -4,7 +4,7 @@ from random import Random
 from .transformation import (
     Transformation as Transformation,
     Datum as Datum,
-    Args as Args,
+    TransformationArgs as TransformationArgs,
     Quad as Quad,
 )
 from .transformation import (
@@ -16,7 +16,7 @@ __version__ = "0.3.4"
 
 
 def _prepare(
-    operations: Sequence[Args],
+    operations: Sequence[TransformationArgs],
 ) -> Iterator[tuple[float, Transformation]]:
     from .transformation import create
 
@@ -30,7 +30,7 @@ def _prepare(
 
 
 def create_augmentation(
-    operations: Sequence[Args],
+    operations: Sequence[TransformationArgs],
 ) -> Callable[[Datum, Random], Datum]:
     """
     Main function to create augmentation function.
