@@ -63,6 +63,20 @@ class Datum:
         #: the output image, must be `None` when :class:`Rasterize` is used
         self.image = image
 
+    def __repr__(self):
+        class Repr:
+            def __init__(self, tensor: Tensor):
+                self.tensor = tensor
+
+            def __repr__(self):
+                return f"<{self.tensor.shape, self.tensor.dtype}>"
+
+        description = {
+            key: Repr(value) if isinstance(value, Tensor) else value
+            for key, value in vars(self).items()
+        }
+        return f"{object.__repr__(self)[:-1]} {description}>"
+
 
 class Transformation:
     name: ClassVar[str]
