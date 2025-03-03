@@ -1116,9 +1116,9 @@ class OneOf(Transformation):
 
     class Args(ArgDict):
         name: Literal["one_of"]
-        operations: list[Args]
+        operations: list[TransformationArgs]
 
-    def __init__(self, operations: list[Args]) -> None:
+    def __init__(self, operations: list[TransformationArgs]) -> None:
         self._operations = [create(op) for op in operations]
         values = [
             (idx, op.get("probability", 1.0))
@@ -1134,7 +1134,7 @@ class OneOf(Transformation):
         return one_of_operation(datum, random)
 
 
-Args: TypeAlias = (
+TransformationArgs: TypeAlias = (
     Projective1pt.Args
     | Projective4pt.Args
     | Flip.Args
@@ -1159,7 +1159,7 @@ Args: TypeAlias = (
 )
 
 
-def create(kwargs: Args) -> Transformation:
+def create(kwargs: TransformationArgs) -> Transformation:
     name: str = kwargs["name"]
     kwargs = kwargs.copy()
     del kwargs["name"]

@@ -31,8 +31,8 @@ class SetValue(Transformation):
         return datum
 
 
-transformation.Args |= SetValue.Args
-ballfish.Args = transformation.Args
+transformation.TransformationArgs |= SetValue.Args
+ballfish.TransformationArgs = transformation.TransformationArgs
 
 
 class FakeRandom:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from unittest import TestCase
-from ballfish import Args
+from ballfish import TransformationArgs
 from ballfish import transformation, Transformation
 
 
@@ -17,17 +17,17 @@ def _gather_transformations():
 
 class ProgrammerErrors(TestCase):
     def test_no_duplicated_names(self):
-        for arg in Args.__args__:
+        for arg in TransformationArgs.__args__:
             self.assertIn("name", arg.__annotations__)
         all_operations = set(
             arg.__annotations__["name"]
             ._evaluate(None, None, recursive_guard=frozenset())
             .__args__[0]
-            for arg in Args.__args__
+            for arg in TransformationArgs.__args__
         )
         self.assertEqual(
             len(all_operations),
-            len(Args.__args__),
+            len(TransformationArgs.__args__),
             "Programmer error. Name duplication detected",
         )
 
