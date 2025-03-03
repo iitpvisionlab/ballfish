@@ -1163,6 +1163,7 @@ def create(kwargs: Args) -> Transformation:
     name: str = kwargs["name"]
     kwargs = kwargs.copy()
     del kwargs["name"]
+    kwargs.pop("probability", None)
     if name not in all_transformation_classes:
         raise Exception(
             f"Unknown transformation name `{name}`, "
