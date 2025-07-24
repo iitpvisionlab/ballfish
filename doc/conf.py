@@ -44,3 +44,4 @@ from doc.gen_images import generate_images
 print("generating images")
 generate_images()
 print("done")
+autodoc_member_order = "bysource"
