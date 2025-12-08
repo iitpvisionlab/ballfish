@@ -13,7 +13,6 @@ Welcome to Ballfish's documentation!
 
 .. automodule:: ballfish.distribution
     :members:
-    :no-undoc-members:
     :exclude-members: ChoiceParams, ConstantParams, RandrangeParams, TruncnormParams, UniformParams
 
 .. automodule:: ballfish.transformation

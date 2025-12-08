@@ -2,7 +2,7 @@ from __future__ import annotations
 from unittest import TestCase
 from random import Random
 
-from ballfish.distribution import create_distribution
+from ballfish.distribution import create_distribution, Require
 import numpy as np
 import math
 
@@ -83,3 +83,29 @@ class RandrangeTest(TestCase):
         random = Random(13)
         distribution = [f(random) for _ in range(1000)]
         self.assertEqual(set(distribution), set(range(-1, 42)))
+
+
+class ReuqirementsTest(TestCase):
+    def test_minimum(self):
+        with self.assertRaises(ValueError) as e:
+            create_distribution(0.0, Require("val1", minimum=1.0))
+        self.assertEqual(
+            str(e.exception),
+            "val1's minimum (0.0) is below the required minimum (1.0)",
+        )
+
+    def test_maximum(self):
+        with self.assertRaises(ValueError) as e:
+            create_distribution(1.0, Require("val2", maximum=0.0))
+        self.assertEqual(
+            str(e.exception),
+            "val2's maximum (1.0) exceeds the required maximum (0.0)",
+        )
+
+    def test_is_int(self):
+        with self.assertRaises(ValueError) as e:
+            create_distribution(3.14, Require("val3", is_int=True))
+        self.assertEqual(
+            str(e.exception),
+            "val3's value is required to be integer",
+        )
