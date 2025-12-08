@@ -18,6 +18,7 @@ Welcome to Ballfish's documentation!
 .. automodule:: ballfish.transformation
     :members:
     :no-undoc-members:
+    :member-order: bysource
     :exclude-members: ArgDict, ConstantDict, Args
 
 
