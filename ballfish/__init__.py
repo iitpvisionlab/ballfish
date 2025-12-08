@@ -7,8 +7,9 @@ from .transformation import (
     TransformationArgs as TransformationArgs,
     Quad as Quad,
 )
-from .transformation import (
+from .distribution import (
     create_distribution as create_distribution,
+    Require as Require,
     DistributionParams as DistributionParams,
 )
 

@@ -59,8 +59,43 @@ DistributionParams: TypeAlias = (
 )
 
 
+class Require:
+    """
+    A way to limit :func:`create_distribution` expected values
+    """
+
+    def __init__(
+        self,
+        name: str,
+        minimum: float | None = None,
+        maximum: float | None = None,
+        is_int: bool = False,
+    ) -> None:
+        self._name = name
+        self._minimum = minimum
+        self._maximum = maximum
+        self._is_int = is_int
+
+    def __call__(self, minimum: float, maximum: float, is_int: bool) -> None:
+        """
+        Raises `ValueError` when validation fails
+        """
+        if self._minimum is not None and minimum < self._minimum:
+            raise ValueError(
+                f"{self._name}'s minimum ({minimum}) "
+                f"is below the required minimum ({self._minimum})"
+            )
+        if self._maximum is not None and maximum > self._maximum:
+            raise ValueError(
+                f"{self._name}'s maximum ({maximum}) "
+                f"exceeds the required maximum ({self._maximum})"
+            )
+        if self._is_int and not is_int:
+            raise ValueError(f"{self._name}'s value is required to be integer")
+
+
 def create_distribution(
-    kwargs: DistributionParams,
+    kwargs: DistributionParams, require: Require | None = None
 ) -> Distribution:
     """
     .. list-table:: Available Distributions
@@ -107,7 +142,15 @@ def create_distribution(
          - .. image:: _static/transformations/choice_with_probability.svg
               :width: 75%
 
-    :param name: distribution name in ['uniform', 'truncnorm', 'constant', 'randrange']
+    :param require: optional :class:`Require` class that will ensure
+                    that distribution is in required range
+
+    Example
+    -------
+    .. code-block::
+
+        >>> ballfish.create_distribution({"name": "truncnorm", "a": -0.25, "b": 0.25})
+        <function create_distribution.<locals>._truncnorm at 0x7feb7e166b60>
     """
     if isinstance(kwargs, (float, int)):
         kwargs = {"name": "constant", "value": kwargs}
@@ -115,6 +158,7 @@ def create_distribution(
         kwargs = kwargs.copy()
     match kwargs["name"]:
         case "uniform":
+            minimum, maximum, is_int = kwargs["a"], kwargs["b"], False
 
             def _uniform(
                 random: Random,
@@ -135,6 +179,7 @@ def create_distribution(
                 a, b = mu - delta, mu + delta
             else:
                 a, b = kwargs.pop("a"), kwargs.pop("b")
+            minimum, maximum, is_int = a, b, False
             f = truncnorm(mu, kwargs.pop("sigma", 1.0), a, b)
 
             def _truncnorm(
@@ -146,6 +191,7 @@ def create_distribution(
 
         case "constant":
             value = kwargs.pop("value")
+            minimum, maximum, is_int = value, value, isinstance(value, int)
 
             def _constant(random: Random, value: float = value) -> float:
                 return value
@@ -153,6 +199,7 @@ def create_distribution(
             ret = _constant
 
         case "randrange":
+            minimum, maximum, is_int = kwargs["start"], kwargs["stop"], True
 
             def _randrange(
                 random: Random,
@@ -175,6 +222,12 @@ def create_distribution(
                 population = cast(list[Value], values)
                 cum_weights = None
 
+            minimum, maximum, is_int = (
+                min(population),
+                max(population),
+                all([isinstance(val, int) for val in population]),
+            )
+
             def _choice(random: Random):
                 return random.choices(population, cum_weights=cum_weights)[0]
 
@@ -183,4 +236,6 @@ def create_distribution(
             raise ValueError(f"Unsupported distribution: {kwargs['name']}")
     if len(kwargs) != 1:
         raise ValueError(f"Can't create distribution from kwargs: {kwargs}")
+    if require is not None:
+        require(minimum, maximum, is_int)
     return ret
